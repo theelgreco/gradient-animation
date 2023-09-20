@@ -4,10 +4,10 @@ import timingFunctions from "../utils/timingFunctions.js";
 
 function linearGradientStringToNestedArray(str) {
   const regex = /linear-gradient\((.*)\)/;
-
+  const splitRegex = /(?<=[a-z\)%]), /;
   // match string inside of parentheses (-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
-  console.log(str);
-  const stringArray = str.match(regex)[1].split(", ");
+
+  const stringArray = str.match(regex)[1].split(splitRegex);
   // nest arrays to split value from "key",
   // e.g: ["-55deg", "transparent 25%"] => [["-55, "deg"], ["transparent", "25%"]]
 
@@ -16,7 +16,7 @@ function linearGradientStringToNestedArray(str) {
     const subStr = stringArray[i];
     // console.log(subStr);
     const isRotation = subStr.includes("deg") || subStr.includes("turn");
-    const splitStr = subStr.split(" ");
+    const splitStr = subStr.split(/(?<=[a-z\)]) /);
     if (isRotation) {
       res.push(splitRotationStringToArr(subStr));
     } else if (i === 0) {
@@ -27,7 +27,7 @@ function linearGradientStringToNestedArray(str) {
     }
   }
 
-  // console.log(res);
+  console.log(res);
   return res;
 }
 
