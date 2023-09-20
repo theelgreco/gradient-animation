@@ -137,7 +137,6 @@ function animate(element, keyframes, iterations) {
     const easedProgress = method(progress);
     const currentValue = from + (to - from) * easedProgress;
 
-    console.log(index, subIndex);
     fromStrNestedArr[index][subIndex] =
       subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
 
