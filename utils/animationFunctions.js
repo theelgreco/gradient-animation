@@ -27,7 +27,6 @@ function linearGradientStringToNestedArray(str) {
     }
   }
 
-  console.log(res);
   return res;
 }
 
@@ -51,24 +50,22 @@ function splitRotationStringToArr(str) {
 //   => { index: 1, from: 20, to: 50, unit: "%" }
 function findDiffIndex(arr1, arr2) {
   const arrLength = arr1.length;
+
   let diff = {};
   for (let i = 0; i < arrLength; i++) {
     if (!arr1[i][1]) continue;
-    const str1 = arr1[i][0] + arr1[i][1];
-    const str2 = arr2[i][0] + arr2[i][1];
-    if (str1 !== str2) {
-      let unitRegex = /\D+/;
-      const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
-      // console.log(str1)
-      // const subIndex = 1;
-      diff.index = i;
-      diff.subIndex = subIndex;
-      diff.from = parseFloat(arr1[i][subIndex]);
-      diff.to = parseFloat(arr2[i][subIndex]);
-      diff.unit = arr1[i][1].match(unitRegex)[0];
-      break;
-    }
+    // removed the commented lines for now as they were glitching if one frame to another had the same value, e.g no changes from frame 1 to 2
+
+    let unitRegex = /\D+/;
+    const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
+    diff.index = i;
+    diff.subIndex = subIndex;
+    diff.from = parseFloat(arr1[i][subIndex]);
+    diff.to = parseFloat(arr2[i][subIndex]);
+    diff.unit = arr1[i][1].match(unitRegex)[0];
+    break;
   }
+
   return diff;
 }
 
@@ -140,6 +137,7 @@ function animate(element, keyframes, iterations) {
     const easedProgress = method(progress);
     const currentValue = from + (to - from) * easedProgress;
 
+    console.log(index, subIndex);
     fromStrNestedArr[index][subIndex] =
       subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
 
