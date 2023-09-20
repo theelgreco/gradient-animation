@@ -5,45 +5,73 @@ import animate from "./animationFunctions.js";
 // check if @keyframes linearGradient exists
 function checkForGradientAnimationCSS(doc) {
   let myRules = doc.styleSheets[0].cssRules;
-  let keyFrames;
+  let keyframes;
   for (let i = 0; i < myRules.length; i++) {
     if (
       myRules[i].type === 7 &&
       myRules[i].name === "linearGradientAnimation"
     ) {
-      keyFrames = myRules[i];
+      keyframes = myRules[i];
       break;
     }
   }
-  return keyFrames;
+
+  return keyframes;
 }
 
 // create array with keyframe strings => e.g, ["linear-gradient(90deg, red, black, red)"]
-function formatKeyframeStrings(keyframes) {
+function formatKeyframeStrings(keyframes, backgroundImage) {
   let frames = [];
+  let index = 0;
   for (let key in keyframes) {
     if (parseInt(key) > -1) {
       let regex = /linear-gradient\(.*\)/;
       let frame = keyframes[key];
       let cssText = frame.cssText;
-      frames.push(cssText.match(regex)[0]);
+      let keyText = frame.keyText;
+      if (index === 0 && keyText !== "0%") {
+        frames.push([backgroundImage, "0%"]);
+      }
+      frames.push([cssText.match(regex)[0], keyText]);
     }
+    index++;
   }
   return frames;
 }
 
-// take keyframe strings and convert to keyframe object
+// take keyframe strings array and convert to keyframe array of objects,
+// e.g, [
+//       "linear-gradient(90deg, red, black 50%, red)",
+//       "linear-gradient(90deg, red, black 100%, red)"
+//      ]
+//   => {
+//        from: "linear-gradient(90deg, red, black 50%, red)",
+//        to: "linear-gradient(90deg, red, black 100%, red)",
+//        duration: 2000,
+//        method: "linear"
+//      }
+
 function formatKeyframes(keyframesFromCss, duration, method) {
   let f = [];
+
+  duration = secondsStringToMs(duration);
+
   for (let i = 0; i < keyframesFromCss.length; i++) {
     if (i === 0) continue;
+
+    const frameDuration = calculateDurationPerFrame(
+      duration,
+      parseInt(keyframesFromCss[i][1])
+    );
     f.push({
-      from: keyframesFromCss[i - 1],
-      to: keyframesFromCss[i],
-      duration: duration,
+      from: keyframesFromCss[i - 1][0],
+      to: keyframesFromCss[i][0],
+      duration: frameDuration,
       method: method,
     });
+    duration -= frameDuration;
   }
+
   return f;
 }
 
@@ -53,8 +81,9 @@ function secondsStringToMs(str) {
 }
 
 // split duration between number of frames
-function calculateDurationPerFrame(duration, numberOfFrames) {
-  return Math.floor(duration / (numberOfFrames - 1));
+function calculateDurationPerFrame(duration, percent) {
+  const percentToDecimal = percent / 100;
+  return Math.floor(duration * percentToDecimal);
 }
 
 function initialiseCssOnLoad(document) {
@@ -62,21 +91,22 @@ function initialiseCssOnLoad(document) {
 
   if (gradientAnimationFromCss) {
     const gradient = document.querySelector(".linearGradientAnimation");
+
     let {
       animationDuration,
       animationTimingFunction,
       animationIterationCount,
+      backgroundImage,
     } = window.getComputedStyle(gradient);
-    let keyframesFromCss = formatKeyframeStrings(gradientAnimationFromCss);
 
-    const duration = calculateDurationPerFrame(
-      secondsStringToMs(animationDuration),
-      keyframesFromCss.length
+    let keyframesFromCss = formatKeyframeStrings(
+      gradientAnimationFromCss,
+      backgroundImage
     );
 
-    const keyframes2 = formatKeyframes(
+    let keyframes2 = formatKeyframes(
       keyframesFromCss,
-      duration,
+      animationDuration,
       animationTimingFunction
     );
 

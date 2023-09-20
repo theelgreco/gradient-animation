@@ -3,25 +3,31 @@
 import timingFunctions from "../utils/timingFunctions.js";
 
 function linearGradientStringToNestedArray(str) {
-  let regex = /\((.*)\)/;
-  // console.log(str);
+  const regex = /linear-gradient\((.*)\)/;
 
   // match string inside of parentheses (-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
-  let stringArray = str.match(regex)[1].split(", ");
+  console.log(str);
+  const stringArray = str.match(regex)[1].split(", ");
   // nest arrays to split value from "key",
   // e.g: ["-55deg", "transparent 25%"] => [["-55, "deg"], ["transparent", "25%"]]
-  let res = [];
-  const strSplitArray = stringArray.map((str, index) => {
-    let isRotation = str.includes("deg") || str.includes("turn");
-    if (isRotation) {
-      res.push(splitRotationStringToArr(str));
-    } else if (index === 0) {
-      res.push(["180", "deg"], [str]);
-    } else {
-      res.push(str.split(" "));
-    }
-  });
 
+  const res = [];
+  for (let i = 0; i < stringArray.length; i++) {
+    const subStr = stringArray[i];
+    // console.log(subStr);
+    const isRotation = subStr.includes("deg") || subStr.includes("turn");
+    const splitStr = subStr.split(" ");
+    if (isRotation) {
+      res.push(splitRotationStringToArr(subStr));
+    } else if (i === 0) {
+      res.push(["180", "deg"]);
+      res.push(splitStr);
+    } else {
+      res.push(splitStr);
+    }
+  }
+
+  // console.log(res);
   return res;
 }
 
@@ -52,11 +58,13 @@ function findDiffIndex(arr1, arr2) {
     const str2 = arr2[i][0] + arr2[i][1];
     if (str1 !== str2) {
       let unitRegex = /\D+/;
-      const subIndex = parseInt(str1[i][1]) > -1 ? 1 : 0;
+      const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
+      // console.log(str1)
+      // const subIndex = 1;
       diff.index = i;
       diff.subIndex = subIndex;
-      diff.from = parseInt(arr1[i][subIndex]);
-      diff.to = parseInt(arr2[i][subIndex]);
+      diff.from = parseFloat(arr1[i][subIndex]);
+      diff.to = parseFloat(arr2[i][subIndex]);
       diff.unit = arr1[i][1].match(unitRegex)[0];
       break;
     }
@@ -84,12 +92,14 @@ function formatStringFromArr(arr) {
 }
 
 function animate(element, keyframes, iterations) {
+  console.log("starting animation...");
   let currentIteration = 1;
   let startTime = performance.now();
   const steps = keyframes.length;
   let currentStep = 0;
 
   function update(currentTime) {
+    console.log("animating...");
     const elapsedTime = currentTime - startTime;
     const currentKeyframe = keyframes[currentStep];
 
