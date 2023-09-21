@@ -27,7 +27,7 @@ function linearGradientStringToNestedArray(str) {
     }
   }
 
-  // console.log(res);
+  console.log(res);
   return res;
 }
 
@@ -89,49 +89,17 @@ function formatStringFromArr(arr) {
   return resString;
 }
 
-function checkIfAnimationFinished(
-  element,
-  elapsedTime,
-  duration,
-  startTime,
-  toStrNestedArr,
-  currentStep,
-  currentIteration,
-  totalIterations,
-  totalSteps
-) {
-  // check if the keyframe has ended, a.k.a if the time passed is equal to or greater than the total duration of the keyframe
-  if (elapsedTime >= duration) {
-    element.style.background = formatStringFromArr(toStrNestedArr);
-    currentStep++;
-
-    // check if the current step (keyframe)
-    if (currentStep === totalSteps) {
-      currentStep = 0; // Reset to the first keyframe for the next iteration
-      currentIteration++;
-
-      if (totalIterations !== undefined && currentIteration > totalIterations) {
-        return; // All totalIterations completed
-      } else if (totalIterations === undefined) {
-        return; // Run only once if iterations is undefined
-      }
-    }
-
-    startTime = performance.now();
-  }
-}
-
-function animate(element, steps, iterations) {
+function animate(element, keyframes, iterations) {
   console.log("starting animation...");
   let currentIteration = 1;
   let startTime = performance.now();
-  const totalNumOfSteps = steps.length;
+  const steps = keyframes.length;
   let currentStep = 0;
 
   function update(currentTime) {
     console.log("animating...");
     const elapsedTime = currentTime - startTime;
-    const currentKeyframe = steps[currentStep];
+    const currentKeyframe = keyframes[currentStep];
 
     // Takes the from property and turns into a nested array, e.g:
     // from: "linear-gradient(90deg, red, orange 50%, red)",
@@ -147,27 +115,33 @@ function animate(element, steps, iterations) {
       currentKeyframe.to
     );
 
-    const { duration } = steps[currentStep];
-    const method = timingFunctions[steps[currentStep].method];
-
-    // check if the animation has ended
-    checkIfAnimationFinished(
-      element,
-      elapsedTime,
-      duration,
-      startTime,
-      toStrNestedArr,
-      currentStep,
-      currentIteration,
-      iterations,
-      totalNumOfSteps
-    );
-
-    // takes the two nested arrays representing the from step and to step and finds the different value
+    // Finds the different value given the two arrays above and returns an object
+    // idea: return array of objects for each different property
     const { index, subIndex, startValue, endValue, unit } = findDiffIndex(
       fromStrNestedArr,
       toStrNestedArr
     );
+
+    const { duration } = keyframes[currentStep];
+    const method = timingFunctions[keyframes[currentStep].method];
+
+    if (elapsedTime >= duration) {
+      element.style.background = formatStringFromArr(toStrNestedArr);
+      currentStep++;
+
+      if (currentStep === steps) {
+        currentStep = 0; // Reset to the first keyframe for the next iteration
+        currentIteration++;
+
+        if (iterations !== undefined && currentIteration > iterations) {
+          return; // All iterations completed
+        } else if (iterations === undefined) {
+          return; // Run only once if iterations is undefined
+        }
+      }
+
+      startTime = performance.now();
+    }
 
     // progress is a percent of time passed,
     // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
