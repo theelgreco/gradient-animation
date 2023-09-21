@@ -92,17 +92,17 @@ function formatStringFromArr(arr) {
   return resString;
 }
 
-function animate(element, keyframes, iterations) {
+function animate(element, steps, iterations) {
   console.log("starting animation...");
   let currentIteration = 1;
   let startTime = performance.now();
-  const steps = keyframes.length;
+  const totalSteps = steps.length;
   let currentStep = 0;
 
   function update(currentTime) {
     console.log("animating...");
     const elapsedTime = currentTime - startTime;
-    const currentKeyframe = keyframes[currentStep];
+    const currentKeyframe = steps[currentStep];
 
     // Takes the from property and turns into a nested array, e.g:
     // from: "linear-gradient(90deg, red, orange 50%, red)",
@@ -118,21 +118,14 @@ function animate(element, keyframes, iterations) {
       currentKeyframe.to
     );
 
-    // Finds the different value given the two arrays above and returns an object
-    // idea: return array of objects for each different property
-    const { index, subIndex, startValue, endValue, unit } = findDiffIndex(
-      fromStrNestedArr,
-      toStrNestedArr
-    );
-
-    const { duration } = keyframes[currentStep];
-    const method = timingFunctions[keyframes[currentStep].method];
+    const { duration } = steps[currentStep];
+    const method = timingFunctions[steps[currentStep].method];
 
     if (elapsedTime >= duration) {
       element.style.background = formatStringFromArr(toStrNestedArr);
       currentStep++;
 
-      if (currentStep === steps) {
+      if (currentStep === totalSteps) {
         currentStep = 0; // Reset to the first keyframe for the next iteration
         currentIteration++;
 
@@ -146,24 +139,32 @@ function animate(element, keyframes, iterations) {
       startTime = performance.now();
     }
 
-    // progress is a percent of time passed,
-    // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
-    const progress = Math.min(elapsedTime / duration, 1);
-    // this takes the progress and passes it to the easing function which returns a new percentage based on the easing method
-    // e.g, if method is ease-in and progress = 0.5 => it may return 0.35 (not accurate just an example)
-    const easedProgress = method(progress);
+    // Finds the different value given the two arrays above and returns an object
+    // idea: return array of objects for each different property
+    const differences = findDiffIndex(fromStrNestedArr, toStrNestedArr);
 
-    // totalChange is equal to the total amount the value changes from one frame to the next,
-    // e.g if start = 50 & end = 100 => totalChange = 50
-    const totalChange = endValue - startValue;
-    const currentValue = startValue + totalChange * easedProgress;
+    if (Object.keys(differences).length) {
+      const { index, subIndex, startValue, endValue, unit } = differences;
 
-    // update the value in the nested array, if it has
-    fromStrNestedArr[index][subIndex] =
-      subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
+      // progress is a percent of time passed,
+      // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
+      const progress = Math.min(elapsedTime / duration, 1);
+      // this takes the progress and passes it to the easing function which returns a new percentage based on the easing method
+      // e.g, if method is ease-in and progress = 0.5 => it may return 0.35 (not accurate just an example)
+      const easedProgress = method(progress);
 
-    // takes the nested array and turns it into a valid CSS string and applies it as the background
-    element.style.background = formatStringFromArr(fromStrNestedArr);
+      // totalChange is equal to the total amount the value changes from one frame to the next,
+      // e.g if start = 50 & end = 100 => totalChange = 50
+      const totalChange = endValue - startValue;
+      const currentValue = startValue + totalChange * easedProgress;
+
+      // update the value in the nested array, if it has
+      fromStrNestedArr[index][subIndex] =
+        subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
+
+      // takes the nested array and turns it into a valid CSS string and applies it as the background
+      element.style.background = formatStringFromArr(fromStrNestedArr);
+    }
 
     requestAnimationFrame(update);
   }
