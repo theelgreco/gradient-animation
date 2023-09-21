@@ -27,7 +27,7 @@ function linearGradientStringToNestedArray(str) {
     }
   }
 
-  console.log(res);
+  // console.log(res);
   return res;
 }
 
