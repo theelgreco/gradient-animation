@@ -52,10 +52,12 @@ function splitRotationStringToArr(str) {
 function findDiffIndex(arr1, arr2) {
   const arrLength = arr1.length;
 
-  let diff = {};
+  const arrOfDiffs = [];
+
   for (let i = 0; i < arrLength; i++) {
     if (!arr1[i][1]) continue;
-    // removed the commented lines for now as they were glitching if one frame to another had the same value, e.g no changes from frame 1 to 2
+    let diff = {};
+
     const val1Check = arr1[i][0] === arr2[i][0];
     const val2check = arr1[i][1] === arr2[i][1];
     if (val1Check !== val2check) {
@@ -66,11 +68,11 @@ function findDiffIndex(arr1, arr2) {
       diff.startValue = parseFloat(arr1[i][subIndex]);
       diff.endValue = parseFloat(arr2[i][subIndex]);
       diff.unit = arr1[i][1].match(unitRegex)[0];
-      break;
+      arrOfDiffs.push(diff);
     }
   }
 
-  return diff;
+  return arrOfDiffs;
 }
 
 // put pieces of the string back together:
@@ -93,14 +95,15 @@ function formatStringFromArr(arr) {
 }
 
 function animate(element, steps, iterations) {
-  console.log("starting animation...");
+  console.log("||| STARTING ANIMATION |||");
+
   let currentIteration = 1;
   let startTime = performance.now();
   const totalSteps = steps.length;
   let currentStep = 0;
 
   function update(currentTime) {
-    console.log("animating...");
+    console.log("...animating...");
     const elapsedTime = currentTime - startTime;
     const currentKeyframe = steps[currentStep];
 
@@ -130,8 +133,10 @@ function animate(element, steps, iterations) {
         currentIteration++;
 
         if (iterations !== undefined && currentIteration > iterations) {
+          console.log("||| FINISHED ANIMATION |||");
           return; // All iterations completed
         } else if (iterations === undefined) {
+          console.log("||| FINISHED ANIMATION |||");
           return; // Run only once if iterations is undefined
         }
       }
@@ -139,31 +144,34 @@ function animate(element, steps, iterations) {
       startTime = performance.now();
     }
 
-    // Finds the different value given the two arrays above and returns an object
-    // idea: return array of objects for each different property
+    // Finds the different value given the two arrays above and returns an array of objects containing differences for each property, e.g position, rotation
+    // if object is empty then there is no difference between frames so will not execute - instead goes to next step
     const differences = findDiffIndex(fromStrNestedArr, toStrNestedArr);
+    const framesHaveDifferences = differences.length;
 
-    if (Object.keys(differences).length) {
-      const { index, subIndex, startValue, endValue, unit } = differences;
+    if (framesHaveDifferences) {
+      differences.forEach((difference) => {
+        const { index, subIndex, startValue, endValue, unit } = difference;
 
-      // progress is a percent of time passed,
-      // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
-      const progress = Math.min(elapsedTime / duration, 1);
-      // this takes the progress and passes it to the easing function which returns a new percentage based on the easing method
-      // e.g, if method is ease-in and progress = 0.5 => it may return 0.35 (not accurate just an example)
-      const easedProgress = method(progress);
+        // progress is a percent of time passed,
+        // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
+        const progress = Math.min(elapsedTime / duration, 1);
+        // this takes the progress and passes it to the easing function which returns a new percentage based on the easing method
+        // e.g, if method is ease-in and progress = 0.5 => it may return 0.35 (not accurate just an example)
+        const easedProgress = method(progress);
 
-      // totalChange is equal to the total amount the value changes from one frame to the next,
-      // e.g if start = 50 & end = 100 => totalChange = 50
-      const totalChange = endValue - startValue;
-      const currentValue = startValue + totalChange * easedProgress;
+        // totalChange is equal to the total amount the value changes from one frame to the next,
+        // e.g if start = 50 & end = 100 => totalChange = 50
+        const totalChange = endValue - startValue;
+        const currentValue = startValue + totalChange * easedProgress;
 
-      // update the value in the nested array, if it has
-      fromStrNestedArr[index][subIndex] =
-        subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
+        // update the value in the nested array, if it has
+        fromStrNestedArr[index][subIndex] =
+          subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
 
-      // takes the nested array and turns it into a valid CSS string and applies it as the background
-      element.style.background = formatStringFromArr(fromStrNestedArr);
+        // takes the nested array and turns it into a valid CSS string and applies it as the background
+        element.style.background = formatStringFromArr(fromStrNestedArr);
+      });
     }
 
     requestAnimationFrame(update);
