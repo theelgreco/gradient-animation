@@ -9,19 +9,16 @@ function linearGradientStringToNestedArray(str) {
 
   const stringArray = str.match(regex)[1].split(splitRegex);
   // nest arrays to split value from "key",
-  // e.g: ["-55deg", "transparent 25%"] => [["-55, "deg"], ["transparent", "25%"]]
+  // e.g: ["55deg", "transparent 25%"] => [["55, "deg"], ["transparent", "25%"]]
 
   const res = [];
   for (let i = 0; i < stringArray.length; i++) {
     const subStr = stringArray[i];
-    // console.log(subStr);
-    const isRotation = subStr.includes("deg") || subStr.includes("turn");
+
     const splitStr = subStr.split(/(?<=[a-z\)]) /);
-    if (isRotation) {
+
+    if (i === 0) {
       res.push(splitRotationStringToArr(subStr));
-    } else if (i === 0) {
-      res.push(["180", "deg"]);
-      res.push(splitStr);
     } else {
       res.push(splitStr);
     }
@@ -32,14 +29,9 @@ function linearGradientStringToNestedArray(str) {
 }
 
 function splitRotationStringToArr(str) {
-  let regex = /deg|turn/;
+  let regex = /deg/;
   let match = str.match(regex)[0];
   let value = str.split(match)[0];
-
-  if (match === "turn") {
-    value = value.includes(".") ? "0." + value.split(".")[1] : value;
-    value = String(360 * Number(value));
-  }
 
   let resArr = [value, "deg"];
   return resArr;
@@ -57,7 +49,6 @@ function findDiffIndex(arr1, arr2) {
   for (let i = 0; i < arrLength; i++) {
     if (!arr1[i][1]) continue;
     let diff = {};
-
     const val1Check = arr1[i][0] === arr2[i][0];
     const val2check = arr1[i][1] === arr2[i][1];
     if (val1Check !== val2check) {
@@ -94,6 +85,64 @@ function formatStringFromArr(arr) {
   return resString;
 }
 
+// formats linear gradient strings at start.
+// turns all rotations to 'deg'
+// converts all colours to rgb/rgba values
+// idea: convert all colour positions to % from any unit, e.g 'rem', 'px'
+function convertGradientString(step) {
+  // this applies the gradient to a temp element to use getcomputedstyle and convert colors to rgb(a)
+  const tempElement = document.createElement("div");
+  tempElement.style.background = step;
+  tempElement.style.display = "none";
+  document.body.appendChild(tempElement);
+  const formattedBgString =
+    window.getComputedStyle(tempElement).backgroundImage;
+  document.body.removeChild(tempElement);
+
+  // match string inside of parentheses (-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
+  const regex = /linear-gradient\((.*)\)/;
+  const splitRegex = /(?<=[a-z\)%]), /;
+  const stringArray = formattedBgString.match(regex)[1].split(splitRegex);
+  const isRotation = checkIfRotation(stringArray[0]);
+
+  if (!isRotation) {
+    stringArray.unshift("180deg");
+  } else {
+    stringArray[0] = convertRotationToDegString(stringArray[0]);
+  }
+
+  let joined = stringArray.join(", ");
+  let resString = `linear-gradient(${joined})`;
+
+  return resString;
+}
+
+function checkIfRotation(subStr) {
+  const isRotation =
+    subStr.includes("deg") || subStr.includes("turn") || subStr.includes("to");
+  return isRotation;
+}
+
+function convertRotationToDegString(str) {
+  let regex = /deg|turn|to/;
+  let match = str.match(regex)[0];
+  let value = str.split(match)[0];
+
+  if (match === "turn") {
+    value = value.includes(".") ? "0." + value.split(".")[1] : value;
+    value = String(360 * Number(value));
+  }
+
+  if (match === "to") {
+    const lookupObj = { top: "0", bottom: "180", left: "270", right: "90" };
+    let direction = str.split(match)[1].trim();
+    value = lookupObj[direction];
+  }
+
+  let res = `${value}deg`;
+  return res;
+}
+
 function animate(element, steps, iterations) {
   console.log("||| STARTING ANIMATION |||");
 
@@ -101,6 +150,14 @@ function animate(element, steps, iterations) {
   let startTime = performance.now();
   const totalSteps = steps.length;
   let currentStep = 0;
+
+  // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
+  // e.g, linear-gradient(to left, red 50px, green 100px, red 150px)
+  //   => linear-gradient(270deg, rgb(255, 0, 0) 50px, rgb(0, 255, 0) 100px, rgb(255, 0, 0) 150px)
+  steps.forEach((step) => {
+    step.from = convertGradientString(step.from);
+    step.to = convertGradientString(step.to);
+  });
 
   function update(currentTime) {
     console.log("...animating...");
@@ -148,7 +205,7 @@ function animate(element, steps, iterations) {
     // if object is empty then there is no difference between frames so will not execute - instead goes to next step
     const differences = findDiffIndex(fromStrNestedArr, toStrNestedArr);
     const framesHaveDifferences = differences.length;
-
+    console.log(differences, " || differences");
     if (framesHaveDifferences) {
       differences.forEach((difference) => {
         const { index, subIndex, startValue, endValue, unit } = difference;
