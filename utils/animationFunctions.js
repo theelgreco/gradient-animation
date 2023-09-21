@@ -27,7 +27,7 @@ function linearGradientStringToNestedArray(str) {
     }
   }
 
-  console.log(res);
+  // console.log(res);
   return res;
 }
 
@@ -56,15 +56,18 @@ function findDiffIndex(arr1, arr2) {
   for (let i = 0; i < arrLength; i++) {
     if (!arr1[i][1]) continue;
     // removed the commented lines for now as they were glitching if one frame to another had the same value, e.g no changes from frame 1 to 2
-
-    let unitRegex = /\D+/;
-    const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
-    diff.index = i;
-    diff.subIndex = subIndex;
-    diff.startValue = parseFloat(arr1[i][subIndex]);
-    diff.endValue = parseFloat(arr2[i][subIndex]);
-    diff.unit = arr1[i][1].match(unitRegex)[0];
-    break;
+    const val1Check = arr1[i][0] === arr2[i][0];
+    const val2check = arr1[i][1] === arr2[i][1];
+    if (val1Check !== val2check) {
+      let unitRegex = /\D+/;
+      const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
+      diff.index = i;
+      diff.subIndex = subIndex;
+      diff.startValue = parseFloat(arr1[i][subIndex]);
+      diff.endValue = parseFloat(arr2[i][subIndex]);
+      diff.unit = arr1[i][1].match(unitRegex)[0];
+      break;
+    }
   }
 
   return diff;
@@ -153,7 +156,7 @@ function animate(element, keyframes, iterations) {
     // totalChange is equal to the total amount the value changes from one frame to the next,
     // e.g if start = 50 & end = 100 => totalChange = 50
     const totalChange = endValue - startValue;
-    const currentValue = (startValue + totalChange) * easedProgress;
+    const currentValue = startValue + totalChange * easedProgress;
 
     // update the value in the nested array, if it has
     fromStrNestedArr[index][subIndex] =
