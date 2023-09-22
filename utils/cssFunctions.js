@@ -5,18 +5,23 @@ import animate from "./animationFunctions.js";
 // check if @keyframes linearGradient exists
 function checkForGradientAnimationCSS(doc) {
   let myRules = doc.styleSheets[0].cssRules;
-  let keyframes;
+  let arrOfKeyframes = [];
   for (let i = 0; i < myRules.length; i++) {
+    let keyframes;
+    let animationName;
     if (
       myRules[i].type === 7 &&
-      myRules[i].name === "linearGradientAnimation"
+      myRules[i].name.includes("linear-gradient-animation")
     ) {
       keyframes = myRules[i];
-      break;
+      animationName = myRules[i].name;
+      arrOfKeyframes.push({ animationName, keyframes });
+      // break;
     }
   }
 
-  return keyframes;
+  return arrOfKeyframes;
+  // return { animationName, keyframes };
 }
 
 // create array with keyframe strings => e.g, ["linear-gradient(90deg, red, black, red)"]
@@ -55,21 +60,24 @@ function formatKeyframes(keyframesFromCss, duration, method) {
   let f = [];
 
   duration = secondsStringToMs(duration);
-
+  console.log(duration);
   for (let i = 0; i < keyframesFromCss.length; i++) {
     if (i === 0) continue;
+    const currentKeyframePercent = parseInt(keyframesFromCss[i][1]);
+    const prevKeyframePercent = parseInt(keyframesFromCss[i - 1][1]);
 
     const frameDuration = calculateDurationPerFrame(
       duration,
-      parseInt(keyframesFromCss[i][1])
+      currentKeyframePercent,
+      prevKeyframePercent
     );
+
     f.push({
       from: keyframesFromCss[i - 1][0],
       to: keyframesFromCss[i][0],
       duration: frameDuration,
       method: method,
     });
-    duration -= frameDuration;
   }
 
   return f;
@@ -81,38 +89,56 @@ function secondsStringToMs(str) {
 }
 
 // split duration between number of frames
-function calculateDurationPerFrame(duration, percent) {
-  const percentToDecimal = percent / 100;
+function calculateDurationPerFrame(
+  duration,
+  currentKeyframePercent,
+  prevKeyframePercent
+) {
+  const percentToDecimal = (currentKeyframePercent - prevKeyframePercent) / 100;
   return Math.floor(duration * percentToDecimal);
 }
 
 function initialiseCssOnLoad(document) {
-  const gradientAnimationFromCss = checkForGradientAnimationCSS(document);
-  const gradient = document.querySelector(".linearGradientAnimation");
+  const arrOfKeyframes = checkForGradientAnimationCSS(document);
 
-  let {
-    animationDuration,
-    animationTimingFunction,
-    animationIterationCount,
-    background,
-  } = window.getComputedStyle(gradient);
+  let resArr = [];
 
-  if (gradientAnimationFromCss && parseFloat(animationDuration)) {
-    let keyframesFromCss = formatKeyframeStrings(
-      gradientAnimationFromCss,
-      background
-    );
+  for (let i = 0; i < arrOfKeyframes.length; i++) {
+    const { animationName, keyframes } = arrOfKeyframes[i];
+    const gradient = document.querySelector(`.${animationName}`);
 
-    let keyframes2 = formatKeyframes(
-      keyframesFromCss,
-      animationDuration,
-      animationTimingFunction
-    );
+    if (gradient) {
+      let {
+        animationDuration,
+        animationTimingFunction,
+        animationIterationCount,
+        background,
+      } = window.getComputedStyle(gradient);
 
-    if (animationIterationCount && animationIterationCount === "infinite") {
-      animationIterationCount = Infinity;
+      if (keyframes && parseFloat(animationDuration)) {
+        let keyframesFromCss = formatKeyframeStrings(keyframes, background);
+
+        let keyframes2 = formatKeyframes(
+          keyframesFromCss,
+          animationDuration,
+          animationTimingFunction
+        );
+
+        if (animationIterationCount && animationIterationCount === "infinite") {
+          animationIterationCount = Infinity;
+        }
+
+        animationIterationCount = parseInt(animationIterationCount);
+
+        resArr.push([gradient, keyframes2, animationIterationCount]);
+      }
     }
+  }
 
+  for (let i = 0; i < resArr.length; i++) {
+    const gradient = resArr[i][0];
+    const keyframes2 = resArr[i][1];
+    const animationIterationCount = resArr[i][2];
     animate(gradient, keyframes2, animationIterationCount);
   }
 }
