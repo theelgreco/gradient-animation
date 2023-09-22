@@ -242,7 +242,8 @@ function animate(element, steps, iterations) {
     );
 
     const { duration } = steps[currentStep];
-    const method = timingFunctions[steps[currentStep].method];
+    let method = timingFunctions[steps[currentStep].method];
+    if (!method) method = timingFunctions["linear"];
 
     if (elapsedTime >= duration) {
       element.style.background = formatStringFromArr(toStrNestedArr);
@@ -254,9 +255,11 @@ function animate(element, steps, iterations) {
 
         if (iterations !== undefined && currentIteration > iterations) {
           console.log("||| FINISHED ANIMATION |||");
+          element.dispatchEvent(new Event("animationFinished"));
           return; // All iterations completed
         } else if (iterations === undefined) {
           console.log("||| FINISHED ANIMATION |||");
+          element.dispatchEvent(new Event("animationFinished"));
           return; // Run only once if iterations is undefined
         }
       }
@@ -300,7 +303,16 @@ function animate(element, steps, iterations) {
     requestAnimationFrame(update);
   }
 
-  requestAnimationFrame(update);
+  return new Promise((resolve) => {
+    function onAnimationFinished() {
+      element.removeEventListener("animationFinished", onAnimationFinished);
+      resolve(); // Resolve the Promise when the animation is finished
+    }
+
+    element.addEventListener("animationFinished", onAnimationFinished);
+
+    requestAnimationFrame(update);
+  });
 }
 
 export default animate;

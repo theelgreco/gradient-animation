@@ -88,17 +88,16 @@ function calculateDurationPerFrame(duration, percent) {
 
 function initialiseCssOnLoad(document) {
   const gradientAnimationFromCss = checkForGradientAnimationCSS(document);
+  const gradient = document.querySelector(".linearGradientAnimation");
 
-  if (gradientAnimationFromCss) {
-    const gradient = document.querySelector(".linearGradientAnimation");
+  let {
+    animationDuration,
+    animationTimingFunction,
+    animationIterationCount,
+    background,
+  } = window.getComputedStyle(gradient);
 
-    let {
-      animationDuration,
-      animationTimingFunction,
-      animationIterationCount,
-      background,
-    } = window.getComputedStyle(gradient);
-
+  if (gradientAnimationFromCss && parseFloat(animationDuration)) {
     let keyframesFromCss = formatKeyframeStrings(
       gradientAnimationFromCss,
       background
