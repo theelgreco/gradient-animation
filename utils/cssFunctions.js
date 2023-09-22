@@ -117,8 +117,6 @@ function initialiseCssOnLoad(document) {
       animationDelay,
     } = window.getComputedStyle(gradient);
 
-    console.log(backgroundImage);
-
     if (animation.split(", ")[1]) {
       animationName = animationName.split(", ")[0];
       animationDuration = animationDuration.split(", ")[0];
