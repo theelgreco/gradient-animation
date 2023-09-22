@@ -2,6 +2,12 @@
 
 import timingFunctions from "../utils/timingFunctions.js";
 
+// takes step string and converts it to nested array, e.g,
+// linear-gradient(90deg, red, orange 50px, red)
+// => [["90", "deg"], ["red"], ["orange", "50px"], ["red"]]
+
+// linear-gradient(90deg, rgb(0, 255, 0), rgb(0, 255, 0), rgb(0, 255, 0))
+// => [["90", "deg"], ["0", "255", "0"], ["0", "255", "0"], ["0", "255", "0"]]
 function linearGradientStringToNestedArray(str) {
   const regex = /linear-gradient\((.*)\)/;
   const splitRegex = /(?<=[a-z\)%]), /;
@@ -9,36 +15,36 @@ function linearGradientStringToNestedArray(str) {
 
   const stringArray = str.match(regex)[1].split(splitRegex);
   // nest arrays to split value from "key",
-  // e.g: ["-55deg", "transparent 25%"] => [["-55, "deg"], ["transparent", "25%"]]
+  // e.g: ["55deg", "transparent 25%"] => [["55, "deg"], ["transparent", "25%"]]
 
   const res = [];
   for (let i = 0; i < stringArray.length; i++) {
     const subStr = stringArray[i];
     // console.log(subStr);
-    const isRotation = subStr.includes("deg") || subStr.includes("turn");
+
     const splitStr = subStr.split(/(?<=[a-z\)]) /);
-    if (isRotation) {
+
+    if (i === 0) {
       res.push(splitRotationStringToArr(subStr));
-    } else if (i === 0) {
-      res.push(["180", "deg"]);
-      res.push(splitStr);
     } else {
-      res.push(splitStr);
+      let regex = /rgba\(/;
+      let str1 = splitStr[0];
+      str1 = str1.replace(regex, "");
+      str1 = str1.replace(")", "");
+      const colourSplit = [...str1.split(", "), splitStr[1]];
+
+      res.push(colourSplit);
     }
   }
 
+  // console.log(res);
   return res;
 }
 
 function splitRotationStringToArr(str) {
-  let regex = /deg|turn/;
+  let regex = /deg/;
   let match = str.match(regex)[0];
   let value = str.split(match)[0];
-
-  if (match === "turn") {
-    value = value.includes(".") ? "0." + value.split(".")[1] : value;
-    value = String(360 * Number(value));
-  }
 
   let resArr = [value, "deg"];
   return resArr;
@@ -51,81 +57,208 @@ function splitRotationStringToArr(str) {
 function findDiffIndex(arr1, arr2) {
   const arrLength = arr1.length;
 
-  let diff = {};
-  for (let i = 0; i < arrLength; i++) {
-    if (!arr1[i][1]) continue;
-    // removed the commented lines for now as they were glitching if one frame to another had the same value, e.g no changes from frame 1 to 2
+  const arrOfDiffs = [];
 
-    let unitRegex = /\D+/;
-    const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
-    diff.index = i;
-    diff.subIndex = subIndex;
-    diff.from = parseFloat(arr1[i][subIndex]);
-    diff.to = parseFloat(arr2[i][subIndex]);
-    diff.unit = arr1[i][1].match(unitRegex)[0];
-    break;
+  for (let i = 0; i < arrLength; i++) {
+    const nestedArr1 = arr1[i];
+    const nestedArr2 = arr2[i];
+
+    if (!nestedArr1[1]) continue;
+    if (nestedArr1.length < 3) {
+      const diff = {};
+      const val1Check = nestedArr1[0] === nestedArr2[0];
+      const val2check = nestedArr1[1] === nestedArr2[1];
+      if (val1Check !== val2check) {
+        const unitRegex = /\D+/;
+        const subIndex = parseFloat(nestedArr1[1]) > -1 ? 1 : 0;
+        diff.index = i;
+        diff.subIndex = subIndex;
+        diff.startValue = parseFloat(nestedArr1[subIndex]);
+        diff.endValue = parseFloat(nestedArr2[subIndex]);
+        diff.unit = nestedArr1[1].match(unitRegex)[0];
+        diff.property = subIndex === 0 ? "rotation" : "position";
+        arrOfDiffs.push(diff);
+      }
+    } else {
+      const smallerArr =
+        nestedArr1.length < nestedArr2.length ? nestedArr1 : nestedArr2;
+      const smallerArrLength = smallerArr.length;
+
+      for (let j = 0; j < smallerArrLength; j++) {
+        const val1 = nestedArr1[j];
+        const val2 = nestedArr2[j];
+        const valCheck = val1 === val2;
+
+        if (!valCheck) {
+          const diff = {};
+          const charRegex = /[A-Za-z%]+/;
+          const unit = charRegex.test(val1) ? val1.match(charRegex)[0] : null;
+          diff.index = i;
+          diff.subIndex = j;
+          diff.startValue = parseFloat(val1);
+          diff.endValue = parseFloat(val2);
+          diff.unit = unit;
+          diff.property = unit ? "position" : "color";
+          arrOfDiffs.push(diff);
+        }
+      }
+    }
   }
 
-  return diff;
+  console.log(arrOfDiffs);
+  return arrOfDiffs;
 }
 
 // put pieces of the string back together:
 // e.g, ["linear-gradient(", "90deg", "red 20%", "orange"] => "linear-gradient(90deg, red 20%, orange)"
 function formatStringFromArr(arr) {
+  // [
+  //   ["90", "deg"], DONE
+  //   ["0", "0", "0", "0", "0%"],
+  //   ["255", "0", "0", "0", "0.0044412891050171766%"],
+  //   ["0", "0", "0", "0", "100%"],
+  // ];
+
   let resString = "linear-gradient(";
   let lastIndex = arr.length - 1;
   arr.forEach((subArr, index) => {
     // if subArr[0] is a num then join without spaces, e.g "90", "deg" => "90deg"
-    if (parseFloat(subArr[0]) > -1) {
+    if (index === 0) {
       resString += subArr.join("");
     } else {
-      resString += subArr.join(" ");
+      const rgbaString = `rgba(${subArr[0]}, ${subArr[1]}, ${subArr[2]}, ${subArr[3]}) ${subArr[4]}`;
+      resString += rgbaString;
     }
 
     if (index !== lastIndex) resString += ",";
   });
   resString += ")";
+
+  console.log(resString);
   return resString;
 }
 
-function animate(element, keyframes, iterations) {
-  console.log("starting animation...");
+// formats linear gradient strings at start.
+// turns all rotations to 'deg'
+// converts all colours to rgb/rgba values
+// idea: convert all colour positions to % from any unit, e.g 'rem', 'px'
+function convertGradientString(step) {
+  // this applies the gradient to a temp element to use getcomputedstyle and convert colors to rgb(a)
+  const tempElement = document.createElement("div");
+  tempElement.style.background = step;
+  tempElement.style.display = "none";
+  document.body.appendChild(tempElement);
+  const formattedBgString =
+    window.getComputedStyle(tempElement).backgroundImage;
+  document.body.removeChild(tempElement);
+
+  // match string inside of parentheses (-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
+  const regex = /linear-gradient\((.*)\)/;
+  const splitRegex = /(?<=[a-z\)%]), /;
+  const stringArray = formattedBgString.match(regex)[1].split(splitRegex);
+  const isRotation = checkIfRotation(stringArray[0]);
+
+  if (!isRotation) {
+    stringArray.unshift("180deg");
+  } else {
+    stringArray[0] = convertRotationToDegString(stringArray[0]);
+  }
+
+  const stringArrayMap = stringArray.map((str) => {
+    let rgbRegex = /rgb/;
+    let rgbaRegex = /rgba/;
+
+    if (rgbRegex.test(str) && !rgbaRegex.test(str)) {
+      str = str.replace("rgb", "rgba");
+      str = str.replace(")", ", 1)");
+    }
+
+    return str;
+  });
+
+  let joined = stringArrayMap.join(", ");
+  let resString = `linear-gradient(${joined})`;
+
+  return resString;
+}
+
+function checkIfRotation(subStr) {
+  const isRotation =
+    subStr.includes("deg") || subStr.includes("turn") || subStr.includes("to");
+  return isRotation;
+}
+
+function convertRotationToDegString(str) {
+  let regex = /deg|turn|to/;
+  let match = str.match(regex)[0];
+  let value = str.split(match)[0];
+
+  if (match === "turn") {
+    value = value.includes(".") ? "0." + value.split(".")[1] : value;
+    value = String(360 * Number(value));
+  }
+
+  if (match === "to") {
+    const lookupObj = { top: "0", bottom: "180", left: "270", right: "90" };
+    let direction = str.split(match)[1].trim();
+    value = lookupObj[direction];
+  }
+
+  let res = `${value}deg`;
+  return res;
+}
+
+function animate(element, steps, iterations) {
+  console.log("||| STARTING ANIMATION |||");
+
   let currentIteration = 1;
   let startTime = performance.now();
-  const steps = keyframes.length;
+  const totalSteps = steps.length;
   let currentStep = 0;
 
-  function update(currentTime) {
-    console.log("animating...");
-    const elapsedTime = currentTime - startTime;
-    const currentKeyframe = keyframes[currentStep];
+  // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
+  // e.g, linear-gradient(to left, red 50px, green 100px, red 150px)
+  //   => linear-gradient(270deg, rgb(255, 0, 0) 50px, rgb(0, 255, 0) 100px, rgb(255, 0, 0) 150px)
+  steps.forEach((step) => {
+    step.from = convertGradientString(step.from);
+    step.to = convertGradientString(step.to);
+  });
 
-    // find difference
+  function update(currentTime) {
+    console.log("...animating...");
+    const elapsedTime = currentTime - startTime;
+    const currentKeyframe = steps[currentStep];
+
+    // Takes the from property and turns into a nested array, e.g:
+    // from: "linear-gradient(90deg, red, orange 50%, red)",
+    //    => [["90", "deg"], ["red"], ["orange", "50%"], ["red"]]
     const fromStrNestedArr = linearGradientStringToNestedArray(
       currentKeyframe.from
     );
+
+    // Takes the to property and turns into a nested array, e.g:
+    // from: "linear-gradient(90deg, red, orange 50%, red)",
+    //    => [["90", "deg"], ["red"], ["orange", "10%"], ["red"]]
     const toStrNestedArr = linearGradientStringToNestedArray(
       currentKeyframe.to
     );
-    const { index, subIndex, from, to, unit } = findDiffIndex(
-      fromStrNestedArr,
-      toStrNestedArr
-    );
 
-    const { duration } = keyframes[currentStep];
-    const method = timingFunctions[keyframes[currentStep].method];
+    const { duration } = steps[currentStep];
+    const method = timingFunctions[steps[currentStep].method];
 
     if (elapsedTime >= duration) {
       element.style.background = formatStringFromArr(toStrNestedArr);
       currentStep++;
 
-      if (currentStep === steps) {
+      if (currentStep === totalSteps) {
         currentStep = 0; // Reset to the first keyframe for the next iteration
         currentIteration++;
 
         if (iterations !== undefined && currentIteration > iterations) {
+          console.log("||| FINISHED ANIMATION |||");
           return; // All iterations completed
         } else if (iterations === undefined) {
+          console.log("||| FINISHED ANIMATION |||");
           return; // Run only once if iterations is undefined
         }
       }
@@ -133,14 +266,38 @@ function animate(element, keyframes, iterations) {
       startTime = performance.now();
     }
 
-    const progress = Math.min(elapsedTime / duration, 1);
-    const easedProgress = method(progress);
-    const currentValue = from + (to - from) * easedProgress;
+    // Finds the different value given the two arrays above and returns an array of objects containing differences for each property, e.g position, rotation
+    // if object is empty then there is no difference between frames so will not execute - instead goes to next step
+    const differences = findDiffIndex(fromStrNestedArr, toStrNestedArr);
+    const framesHaveDifferences = differences.length;
+    if (framesHaveDifferences) {
+      differences.forEach((difference) => {
+        const { index, subIndex, startValue, endValue, unit, property } =
+          difference;
 
-    fromStrNestedArr[index][subIndex] =
-      subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
+        // progress is a percent of time passed,
+        // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
+        const progress = Math.min(elapsedTime / duration, 1);
+        // this takes the progress and passes it to the easing function which returns a new percentage based on the easing method
+        // e.g, if method is ease-in and progress = 0.5 => it may return 0.35 (not accurate just an example)
+        const easedProgress = method(progress);
 
-    element.style.background = formatStringFromArr(fromStrNestedArr);
+        // totalChange is equal to the total amount the value changes from one frame to the next,
+        // e.g if start = 50 & end = 100 => totalChange = 50
+        const totalChange = endValue - startValue;
+        const currentValue = startValue + totalChange * easedProgress;
+
+        // update the value in the nested array, if it has
+        if (property === "rotation" || property === "color") {
+          fromStrNestedArr[index][subIndex] = `${currentValue}`;
+        } else if (property === "position") {
+          fromStrNestedArr[index][subIndex] = `${currentValue}${unit}`;
+        }
+
+        // takes the nested array and turns it into a valid CSS string and applies it as the background
+        element.style.background = formatStringFromArr(fromStrNestedArr);
+      });
+    }
 
     requestAnimationFrame(update);
   }

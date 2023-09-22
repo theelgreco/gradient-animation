@@ -96,12 +96,12 @@ function initialiseCssOnLoad(document) {
       animationDuration,
       animationTimingFunction,
       animationIterationCount,
-      backgroundImage,
+      background,
     } = window.getComputedStyle(gradient);
 
     let keyframesFromCss = formatKeyframeStrings(
       gradientAnimationFromCss,
-      backgroundImage
+      background
     );
 
     let keyframes2 = formatKeyframes(
