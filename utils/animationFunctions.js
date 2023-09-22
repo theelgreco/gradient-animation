@@ -105,7 +105,6 @@ function findDiffIndex(arr1, arr2) {
     }
   }
 
-  console.log(arrOfDiffs);
   return arrOfDiffs;
 }
 
@@ -134,7 +133,6 @@ function formatStringFromArr(arr) {
   });
   resString += ")";
 
-  console.log(resString);
   return resString;
 }
 
