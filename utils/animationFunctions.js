@@ -2,6 +2,12 @@
 
 import timingFunctions from "../utils/timingFunctions.js";
 
+// takes step string and converts it to nested array, e.g,
+// linear-gradient(90deg, red, orange 50px, red)
+// => [["90", "deg"], ["red"], ["orange", "50px"], ["red"]]
+
+// linear-gradient(90deg, rgb(0, 255, 0), rgb(0, 255, 0), rgb(0, 255, 0))
+// => [["90", "deg"], ["0", "255", "0"], ["0", "255", "0"], ["0", "255", "0"]]
 function linearGradientStringToNestedArray(str) {
   const regex = /linear-gradient\((.*)\)/;
   const splitRegex = /(?<=[a-z\)%]), /;
@@ -14,13 +20,20 @@ function linearGradientStringToNestedArray(str) {
   const res = [];
   for (let i = 0; i < stringArray.length; i++) {
     const subStr = stringArray[i];
+    // console.log(subStr);
 
     const splitStr = subStr.split(/(?<=[a-z\)]) /);
 
     if (i === 0) {
       res.push(splitRotationStringToArr(subStr));
     } else {
-      res.push(splitStr);
+      let regex = /rgba\(/;
+      let str1 = splitStr[0];
+      str1 = str1.replace(regex, "");
+      str1 = str1.replace(")", "");
+      const colourSplit = [...str1.split(", "), splitStr[1]];
+
+      res.push(colourSplit);
     }
   }
 
@@ -47,41 +60,81 @@ function findDiffIndex(arr1, arr2) {
   const arrOfDiffs = [];
 
   for (let i = 0; i < arrLength; i++) {
-    if (!arr1[i][1]) continue;
-    let diff = {};
-    const val1Check = arr1[i][0] === arr2[i][0];
-    const val2check = arr1[i][1] === arr2[i][1];
-    if (val1Check !== val2check) {
-      let unitRegex = /\D+/;
-      const subIndex = parseFloat(arr1[i][1]) > -1 ? 1 : 0;
-      diff.index = i;
-      diff.subIndex = subIndex;
-      diff.startValue = parseFloat(arr1[i][subIndex]);
-      diff.endValue = parseFloat(arr2[i][subIndex]);
-      diff.unit = arr1[i][1].match(unitRegex)[0];
-      arrOfDiffs.push(diff);
+    const nestedArr1 = arr1[i];
+    const nestedArr2 = arr2[i];
+
+    if (!nestedArr1[1]) continue;
+    if (nestedArr1.length < 3) {
+      const diff = {};
+      const val1Check = nestedArr1[0] === nestedArr2[0];
+      const val2check = nestedArr1[1] === nestedArr2[1];
+      if (val1Check !== val2check) {
+        const unitRegex = /\D+/;
+        const subIndex = parseFloat(nestedArr1[1]) > -1 ? 1 : 0;
+        diff.index = i;
+        diff.subIndex = subIndex;
+        diff.startValue = parseFloat(nestedArr1[subIndex]);
+        diff.endValue = parseFloat(nestedArr2[subIndex]);
+        diff.unit = nestedArr1[1].match(unitRegex)[0];
+        diff.property = subIndex === 0 ? "rotation" : "position";
+        arrOfDiffs.push(diff);
+      }
+    } else {
+      const smallerArr =
+        nestedArr1.length < nestedArr2.length ? nestedArr1 : nestedArr2;
+      const smallerArrLength = smallerArr.length;
+
+      for (let j = 0; j < smallerArrLength; j++) {
+        const val1 = nestedArr1[j];
+        const val2 = nestedArr2[j];
+        const valCheck = val1 === val2;
+
+        if (!valCheck) {
+          const diff = {};
+          const charRegex = /[A-Za-z%]+/;
+          const unit = charRegex.test(val1) ? val1.match(charRegex)[0] : null;
+          diff.index = i;
+          diff.subIndex = j;
+          diff.startValue = parseFloat(val1);
+          diff.endValue = parseFloat(val2);
+          diff.unit = unit;
+          diff.property = unit ? "position" : "color";
+          arrOfDiffs.push(diff);
+        }
+      }
     }
   }
 
+  console.log(arrOfDiffs);
   return arrOfDiffs;
 }
 
 // put pieces of the string back together:
 // e.g, ["linear-gradient(", "90deg", "red 20%", "orange"] => "linear-gradient(90deg, red 20%, orange)"
 function formatStringFromArr(arr) {
+  // [
+  //   ["90", "deg"], DONE
+  //   ["0", "0", "0", "0", "0%"],
+  //   ["255", "0", "0", "0", "0.0044412891050171766%"],
+  //   ["0", "0", "0", "0", "100%"],
+  // ];
+
   let resString = "linear-gradient(";
   let lastIndex = arr.length - 1;
   arr.forEach((subArr, index) => {
     // if subArr[0] is a num then join without spaces, e.g "90", "deg" => "90deg"
-    if (parseFloat(subArr[0]) > -1) {
+    if (index === 0) {
       resString += subArr.join("");
     } else {
-      resString += subArr.join(" ");
+      const rgbaString = `rgba(${subArr[0]}, ${subArr[1]}, ${subArr[2]}, ${subArr[3]}) ${subArr[4]}`;
+      resString += rgbaString;
     }
 
     if (index !== lastIndex) resString += ",";
   });
   resString += ")";
+
+  console.log(resString);
   return resString;
 }
 
@@ -111,7 +164,19 @@ function convertGradientString(step) {
     stringArray[0] = convertRotationToDegString(stringArray[0]);
   }
 
-  let joined = stringArray.join(", ");
+  const stringArrayMap = stringArray.map((str) => {
+    let rgbRegex = /rgb/;
+    let rgbaRegex = /rgba/;
+
+    if (rgbRegex.test(str) && !rgbaRegex.test(str)) {
+      str = str.replace("rgb", "rgba");
+      str = str.replace(")", ", 1)");
+    }
+
+    return str;
+  });
+
+  let joined = stringArrayMap.join(", ");
   let resString = `linear-gradient(${joined})`;
 
   return resString;
@@ -205,10 +270,10 @@ function animate(element, steps, iterations) {
     // if object is empty then there is no difference between frames so will not execute - instead goes to next step
     const differences = findDiffIndex(fromStrNestedArr, toStrNestedArr);
     const framesHaveDifferences = differences.length;
-    console.log(differences, " || differences");
     if (framesHaveDifferences) {
       differences.forEach((difference) => {
-        const { index, subIndex, startValue, endValue, unit } = difference;
+        const { index, subIndex, startValue, endValue, unit, property } =
+          difference;
 
         // progress is a percent of time passed,
         // e.g if 1000ms has passed when duration is 2000ms then progress = 0.5 => 50%
@@ -223,8 +288,11 @@ function animate(element, steps, iterations) {
         const currentValue = startValue + totalChange * easedProgress;
 
         // update the value in the nested array, if it has
-        fromStrNestedArr[index][subIndex] =
-          subIndex === 0 ? `${currentValue}` : `${currentValue}${unit}`;
+        if (property === "rotation" || property === "color") {
+          fromStrNestedArr[index][subIndex] = `${currentValue}`;
+        } else if (property === "position") {
+          fromStrNestedArr[index][subIndex] = `${currentValue}${unit}`;
+        }
 
         // takes the nested array and turns it into a valid CSS string and applies it as the background
         element.style.background = formatStringFromArr(fromStrNestedArr);
