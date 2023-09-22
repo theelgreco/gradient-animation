@@ -113,9 +113,11 @@ function initialiseCssOnLoad(document) {
       animationDuration,
       animationTimingFunction,
       animationIterationCount,
-      background,
+      backgroundImage,
       animationDelay,
     } = window.getComputedStyle(gradient);
+
+    console.log(backgroundImage);
 
     if (animation.split(", ")[1]) {
       animationName = animationName.split(", ")[0];
@@ -128,7 +130,7 @@ function initialiseCssOnLoad(document) {
     if (animationName !== "gradient") continue;
     if (!keyframes && !parseFloat(animationDuration)) continue;
 
-    let keyframesFromCss = formatKeyframeStrings(keyframes, background);
+    let keyframesFromCss = formatKeyframeStrings(keyframes, backgroundImage);
 
     let keyframes2 = formatKeyframes(
       keyframesFromCss,

@@ -146,7 +146,7 @@ function formatStringFromArr(arr) {
 function convertGradientString(step) {
   // this applies the gradient to a temp element to use getcomputedstyle and convert colors to rgb(a)
   const tempElement = document.createElement("div");
-  tempElement.style.background = step;
+  tempElement.style.backgroundImage = step;
   tempElement.style.display = "none";
   document.body.appendChild(tempElement);
   const formattedBgString =
@@ -228,7 +228,8 @@ async function animate(element, steps, optionalSettings) {
   console.log("||| STARTING ANIMATION |||");
 
   const iterations = optionalSettings?.iterations;
-  const delay = optionalSettings?.delay;
+  const delay =
+    optionalSettings?.delay === "infinite" ? Infinity : optionalSettings?.delay;
 
   if (delay) {
     console.log(`delaying animation for ${delay}ms...`);
@@ -265,7 +266,7 @@ async function animate(element, steps, optionalSettings) {
     if (!method) method = timingFunctions["linear"];
 
     if (elapsedTime >= duration) {
-      element.style.background = formatStringFromArr(toStrNestedArr);
+      element.style.backgroundImage = formatStringFromArr(toStrNestedArr);
       currentStep++;
 
       if (currentStep === totalSteps) {
@@ -315,7 +316,7 @@ async function animate(element, steps, optionalSettings) {
         }
 
         // takes the nested array and turns it into a valid CSS string and applies it as the background
-        element.style.background = formatStringFromArr(fromStrNestedArr);
+        element.style.backgroundImage = formatStringFromArr(fromStrNestedArr);
       });
     }
 
