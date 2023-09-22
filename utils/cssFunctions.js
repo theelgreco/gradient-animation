@@ -8,14 +8,14 @@ function checkForGradientAnimationCSS(doc) {
   let arrOfKeyframes = [];
   for (let i = 0; i < myRules.length; i++) {
     let keyframes;
-    let animationName;
+    let keyframeRuleName;
     if (
       myRules[i].type === 7 &&
-      myRules[i].name.includes("linear-gradient-animation")
+      myRules[i].name.includes("gradient-animation")
     ) {
       keyframes = myRules[i];
-      animationName = myRules[i].name;
-      arrOfKeyframes.push({ animationName, keyframes });
+      keyframeRuleName = myRules[i].name;
+      arrOfKeyframes.push({ keyframeRuleName, keyframes });
       // break;
     }
   }
@@ -103,10 +103,13 @@ function initialiseCssOnLoad(document) {
   let resArr = [];
 
   for (let i = 0; i < arrOfKeyframes.length; i++) {
-    const { animationName, keyframes } = arrOfKeyframes[i];
-    const gradient = document.querySelector(`.${animationName}`);
+    const { keyframeRuleName, keyframes } = arrOfKeyframes[i];
+    const gradient = document.querySelector(`.${keyframeRuleName}`);
+    if (!gradient) continue;
+
     let {
       animation,
+      animationName,
       animationDuration,
       animationTimingFunction,
       animationIterationCount,
@@ -115,38 +118,40 @@ function initialiseCssOnLoad(document) {
     } = window.getComputedStyle(gradient);
 
     if (animation.split(", ")[1]) {
+      animationName = animationName.split(", ")[0];
       animationDuration = animationDuration.split(", ")[0];
       animationTimingFunction = animationTimingFunction.split(", ")[0];
       animationIterationCount = animationIterationCount.split(", ")[0] || null;
       animationDelay = animationDelay.split(", ")[0] || null;
     }
 
-    if (gradient && keyframes && parseFloat(animationDuration)) {
-      let keyframesFromCss = formatKeyframeStrings(keyframes, background);
+    if (animationName !== "gradient") continue;
+    if (!keyframes && !parseFloat(animationDuration)) continue;
 
-      let keyframes2 = formatKeyframes(
-        keyframesFromCss,
-        animationDuration,
-        animationTimingFunction
-      );
+    let keyframesFromCss = formatKeyframeStrings(keyframes, background);
 
-      if (animationIterationCount === "infinite") {
-        animationIterationCount = Infinity;
-      } else if (!animationIterationCount) {
-        animationIterationCount = 1;
-      } else {
-        animationIterationCount = parseInt(animationIterationCount);
-      }
+    let keyframes2 = formatKeyframes(
+      keyframesFromCss,
+      animationDuration,
+      animationTimingFunction
+    );
 
-      animationDelay = parseFloat(animationDelay) * 1000;
-
-      resArr.push([
-        gradient,
-        keyframes2,
-        animationIterationCount,
-        animationDelay,
-      ]);
+    if (animationIterationCount === "infinite") {
+      animationIterationCount = Infinity;
+    } else if (!animationIterationCount) {
+      animationIterationCount = 1;
+    } else {
+      animationIterationCount = parseInt(animationIterationCount);
     }
+
+    animationDelay = parseFloat(animationDelay) * 1000;
+
+    resArr.push([
+      gradient,
+      keyframes2,
+      animationIterationCount,
+      animationDelay,
+    ]);
   }
 
   for (let i = 0; i < resArr.length; i++) {
