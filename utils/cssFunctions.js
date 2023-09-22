@@ -55,7 +55,6 @@ function formatKeyframeStrings(keyframes, backgroundImage) {
 //        duration: 2000,
 //        method: "linear"
 //      }
-
 function formatKeyframes(keyframesFromCss, duration, method) {
   let f = [];
 
@@ -107,12 +106,20 @@ function initialiseCssOnLoad(document) {
     const { animationName, keyframes } = arrOfKeyframes[i];
     const gradient = document.querySelector(`.${animationName}`);
     let {
+      animation,
       animationDuration,
       animationTimingFunction,
       animationIterationCount,
       background,
       animationDelay,
     } = window.getComputedStyle(gradient);
+
+    if (animation.split(", ")[1]) {
+      animationDuration = animationDuration.split(", ")[0];
+      animationTimingFunction = animationTimingFunction.split(", ")[0];
+      animationIterationCount = animationIterationCount.split(", ")[0] || null;
+      animationDelay = animationDelay.split(", ")[0] || null;
+    }
 
     if (gradient && keyframes && parseFloat(animationDuration)) {
       let keyframesFromCss = formatKeyframeStrings(keyframes, background);
