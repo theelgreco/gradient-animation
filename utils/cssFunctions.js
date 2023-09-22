@@ -63,8 +63,8 @@ function formatKeyframes(keyframesFromCss, duration, method) {
   console.log(duration);
   for (let i = 0; i < keyframesFromCss.length; i++) {
     if (i === 0) continue;
-    const currentKeyframePercent = parseInt(keyframesFromCss[i][1]);
-    const prevKeyframePercent = parseInt(keyframesFromCss[i - 1][1]);
+    const currentKeyframePercent = parseFloat(keyframesFromCss[i][1]);
+    const prevKeyframePercent = parseFloat(keyframesFromCss[i - 1][1]);
 
     const frameDuration = calculateDurationPerFrame(
       duration,
@@ -106,32 +106,29 @@ function initialiseCssOnLoad(document) {
   for (let i = 0; i < arrOfKeyframes.length; i++) {
     const { animationName, keyframes } = arrOfKeyframes[i];
     const gradient = document.querySelector(`.${animationName}`);
+    let {
+      animationDuration,
+      animationTimingFunction,
+      animationIterationCount,
+      background,
+    } = window.getComputedStyle(gradient);
 
-    if (gradient) {
-      let {
+    if (gradient && keyframes && parseFloat(animationDuration)) {
+      let keyframesFromCss = formatKeyframeStrings(keyframes, background);
+
+      let keyframes2 = formatKeyframes(
+        keyframesFromCss,
         animationDuration,
-        animationTimingFunction,
-        animationIterationCount,
-        background,
-      } = window.getComputedStyle(gradient);
+        animationTimingFunction
+      );
 
-      if (keyframes && parseFloat(animationDuration)) {
-        let keyframesFromCss = formatKeyframeStrings(keyframes, background);
-
-        let keyframes2 = formatKeyframes(
-          keyframesFromCss,
-          animationDuration,
-          animationTimingFunction
-        );
-
-        if (animationIterationCount && animationIterationCount === "infinite") {
-          animationIterationCount = Infinity;
-        }
-
-        animationIterationCount = parseInt(animationIterationCount);
-
-        resArr.push([gradient, keyframes2, animationIterationCount]);
+      if (animationIterationCount && animationIterationCount === "infinite") {
+        animationIterationCount = Infinity;
       }
+
+      animationIterationCount = parseInt(animationIterationCount);
+
+      resArr.push([gradient, keyframes2, animationIterationCount]);
     }
   }
 

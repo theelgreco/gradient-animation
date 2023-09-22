@@ -20,9 +20,8 @@ function linearGradientStringToNestedArray(str) {
   const res = [];
   for (let i = 0; i < stringArray.length; i++) {
     const subStr = stringArray[i];
-    // console.log(subStr);
-
     const splitStr = subStr.split(/(?<=[a-z\)]) /);
+    // console.log(subStr);
 
     if (i === 0) {
       res.push(splitRotationStringToArr(subStr));
@@ -31,13 +30,16 @@ function linearGradientStringToNestedArray(str) {
       let str1 = splitStr[0];
       str1 = str1.replace(regex, "");
       str1 = str1.replace(")", "");
-      const colourSplit = [...str1.split(", "), splitStr[1]];
+      const rgbaColourValues = str1.split(", ");
+      const positionValue = splitStr[1];
+      const colourSplit = positionValue
+        ? [...rgbaColourValues, positionValue]
+        : [...rgbaColourValues];
 
       res.push(colourSplit);
     }
   }
 
-  // console.log(res);
   return res;
 }
 
@@ -125,7 +127,8 @@ function formatStringFromArr(arr) {
     if (index === 0) {
       resString += subArr.join("");
     } else {
-      const rgbaString = `rgba(${subArr[0]}, ${subArr[1]}, ${subArr[2]}, ${subArr[3]}) ${subArr[4]}`;
+      let rgbaString = `rgba(${subArr[0]}, ${subArr[1]}, ${subArr[2]}, ${subArr[3]})`;
+      if (subArr[4]) rgbaString += ` ${subArr[4]}`;
       resString += rgbaString;
     }
 
@@ -310,7 +313,6 @@ function animate(element, steps, iterations) {
     }
 
     element.addEventListener("animationFinished", onAnimationFinished);
-
     requestAnimationFrame(update);
   });
 }
