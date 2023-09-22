@@ -60,7 +60,7 @@ function formatKeyframes(keyframesFromCss, duration, method) {
   let f = [];
 
   duration = secondsStringToMs(duration);
-  console.log(duration);
+
   for (let i = 0; i < keyframesFromCss.length; i++) {
     if (i === 0) continue;
     const currentKeyframePercent = parseFloat(keyframesFromCss[i][1]);
@@ -111,6 +111,7 @@ function initialiseCssOnLoad(document) {
       animationTimingFunction,
       animationIterationCount,
       background,
+      animationDelay,
     } = window.getComputedStyle(gradient);
 
     if (gradient && keyframes && parseFloat(animationDuration)) {
@@ -122,13 +123,22 @@ function initialiseCssOnLoad(document) {
         animationTimingFunction
       );
 
-      if (animationIterationCount && animationIterationCount === "infinite") {
+      if (animationIterationCount === "infinite") {
         animationIterationCount = Infinity;
+      } else if (!animationIterationCount) {
+        animationIterationCount = 1;
+      } else {
+        animationIterationCount = parseInt(animationIterationCount);
       }
 
-      animationIterationCount = parseInt(animationIterationCount);
+      animationDelay = parseFloat(animationDelay) * 1000;
 
-      resArr.push([gradient, keyframes2, animationIterationCount]);
+      resArr.push([
+        gradient,
+        keyframes2,
+        animationIterationCount,
+        animationDelay,
+      ]);
     }
   }
 
@@ -136,7 +146,11 @@ function initialiseCssOnLoad(document) {
     const gradient = resArr[i][0];
     const keyframes2 = resArr[i][1];
     const animationIterationCount = resArr[i][2];
-    animate(gradient, keyframes2, animationIterationCount);
+    const delay = resArr[i][3];
+    animate(gradient, keyframes2, {
+      iterations: animationIterationCount,
+      delay: delay,
+    });
   }
 }
 

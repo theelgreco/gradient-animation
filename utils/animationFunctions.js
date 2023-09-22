@@ -209,14 +209,14 @@ function convertRotationToDegString(str) {
   return res;
 }
 
-function animate(element, steps, iterations) {
-  console.log("||| STARTING ANIMATION |||");
+function delayAnimation(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
 
-  let currentIteration = 1;
-  let startTime = performance.now();
-  const totalSteps = steps.length;
-  let currentStep = 0;
-
+async function animate(element, steps, optionalSettings) {
+  console.log("formatting settings");
   // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
   // e.g, linear-gradient(to left, red 50px, green 100px, red 150px)
   //   => linear-gradient(270deg, rgb(255, 0, 0) 50px, rgb(0, 255, 0) 100px, rgb(255, 0, 0) 150px)
@@ -224,6 +224,22 @@ function animate(element, steps, iterations) {
     step.from = convertGradientString(step.from);
     step.to = convertGradientString(step.to);
   });
+
+  console.log("||| STARTING ANIMATION |||");
+
+  const iterations = optionalSettings?.iterations;
+  const delay = optionalSettings?.delay;
+
+  if (delay) {
+    console.log(`delaying animation for ${delay}ms...`);
+    await delayAnimation(delay);
+    console.log(`delay over, resuming animation...`);
+  }
+
+  let currentIteration = 1;
+  let startTime = performance.now();
+  const totalSteps = steps.length;
+  let currentStep = 0;
 
   function update(currentTime) {
     console.log("...animating...");
