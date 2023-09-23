@@ -237,7 +237,7 @@ function formatStepsFromJs(steps, element) {
 
     if (elementBackgroundImage === "none") {
       elementBackgroundImage = currentValue;
-      element.style.backgroundImage = currentValue;
+      // element.style.backgroundImage = currentValue;
     }
 
     let obj = {
@@ -281,7 +281,6 @@ async function animate(element, steps, optionalSettings) {
   let currentStep = 0;
 
   async function update(currentTime) {
-    // console.log("...animating...");
     const elapsedTime = currentTime - startTime;
     const currentKeyframe = steps[currentStep];
 
