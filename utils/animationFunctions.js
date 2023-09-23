@@ -253,6 +253,16 @@ function formatStepsFromJs(steps, element) {
   return res;
 }
 
+function animationEnded(iterations, currentIteration) {
+  if (iterations !== undefined && currentIteration > iterations) {
+    return true; // All iterations completed
+  } else if (iterations === undefined) {
+    return true; // Run only once if iterations is undefined
+  }
+
+  return false;
+}
+
 async function animate(element, steps, optionalSettings) {
   // console.log("formatting settings");
   // if the first step has a value property it's come from js so needs formatting
@@ -267,9 +277,10 @@ async function animate(element, steps, optionalSettings) {
   });
 
   // console.log("||| STARTING ANIMATION |||");
-
+  const originalBackground = window.getComputedStyle(element).backgroundImage;
   const iterations = optionalSettings?.iterations;
   const startDelay = optionalSettings?.startDelay;
+  const fill = optionalSettings?.fill;
   const delay =
     optionalSettings?.delay === "infinite" ? Infinity : optionalSettings?.delay;
 
@@ -310,12 +321,9 @@ async function animate(element, steps, optionalSettings) {
         currentStep = 0; // Reset to the first keyframe for the next iteration
         currentIteration++;
 
-        if (iterations !== undefined && currentIteration > iterations) {
+        if (animationEnded(iterations, currentIteration)) {
           element.dispatchEvent(new Event("animationFinished"));
           return; // All iterations completed
-        } else if (iterations === undefined) {
-          element.dispatchEvent(new Event("animationFinished"));
-          return; // Run only once if iterations is undefined
         }
 
         if (delay) await delayAnimation(delay);
@@ -362,6 +370,7 @@ async function animate(element, steps, optionalSettings) {
 
   return new Promise((resolve) => {
     function onAnimationFinished() {
+      if (!fill) element.style.backgroundImage = originalBackground;
       element.removeEventListener("animationFinished", onAnimationFinished);
       resolve(); // Resolve the Promise when the animation is finished
     }
