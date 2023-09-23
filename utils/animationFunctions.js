@@ -229,14 +229,19 @@ function formatStepsFromJs(steps, element) {
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     if (i === 0 && !step.duration) continue;
-
     const prevStep = steps[i - 1];
     const currentValue = step.value;
     const prevValue = prevStep?.value;
+    let elementBackgroundImage =
+      window.getComputedStyle(element).backgroundImage;
+
+    if (elementBackgroundImage === "none") {
+      elementBackgroundImage = currentValue;
+      element.style.backgroundImage = currentValue;
+    }
 
     let obj = {
-      from:
-        i === 0 ? window.getComputedStyle(element).backgroundImage : prevValue,
+      from: i === 0 ? elementBackgroundImage : prevValue,
       to: currentValue,
       duration: step.duration,
       method: step.method,
@@ -250,8 +255,7 @@ function formatStepsFromJs(steps, element) {
 
 async function animate(element, steps, optionalSettings) {
   // console.log("formatting settings");
-
-  // console.log(element, steps, optionalSettings);
+  // if the first step has a value property it's come from js so needs formatting
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
 
   // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
