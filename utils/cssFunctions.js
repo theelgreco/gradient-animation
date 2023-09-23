@@ -131,6 +131,7 @@ function initialiseCssOnLoad(document) {
       animationIterationCount,
       backgroundImage,
       animationDelay,
+      animationFillMode,
     } = computedStyle;
 
     let animationStartDelay = computedStyle.getPropertyValue(
@@ -179,6 +180,7 @@ function initialiseCssOnLoad(document) {
       animationIterationCount,
       animationDelay,
       animationStartDelay,
+      animationFillMode,
     ]);
   }
 
@@ -188,10 +190,13 @@ function initialiseCssOnLoad(document) {
     const animationIterationCount = resArr[i][2];
     const delay = resArr[i][3];
     const startDelay = resArr[i][4];
+    const fill = resArr[i][5];
+
     animate(gradient, keyframes2, {
       iterations: animationIterationCount,
       delay: delay,
       startDelay: startDelay,
+      fill: fill,
     });
   }
 }
