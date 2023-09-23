@@ -66,15 +66,15 @@ function formatKeyframeStrings(keyframes, backgroundImage) {
 //        duration: 2000,
 //        method: "linear"
 //      }
-function formatKeyframes(keyframesFromCss, duration, method) {
+function formatKeyframes(stepsFromCss, duration, method) {
   let f = [];
 
   duration = secondsStringToMs(duration);
 
-  for (let i = 0; i < keyframesFromCss.length; i++) {
+  for (let i = 0; i < stepsFromCss.length; i++) {
     if (i === 0) continue;
-    const currentKeyframePercent = parseFloat(keyframesFromCss[i][1]);
-    const prevKeyframePercent = parseFloat(keyframesFromCss[i - 1][1]);
+    const currentKeyframePercent = parseFloat(stepsFromCss[i][1]);
+    const prevKeyframePercent = parseFloat(stepsFromCss[i - 1][1]);
 
     const frameDuration = calculateDurationPerFrame(
       duration,
@@ -82,9 +82,13 @@ function formatKeyframes(keyframesFromCss, duration, method) {
       prevKeyframePercent
     );
 
+    // linear-gradient strings
+    const prevValue = stepsFromCss[i - 1][0];
+    const currentValue = stepsFromCss[i][0];
+
     f.push({
-      from: keyframesFromCss[i - 1][0],
-      to: keyframesFromCss[i][0],
+      from: prevValue === "none" ? currentValue : prevValue,
+      to: currentValue,
       duration: frameDuration,
       method: method,
     });
