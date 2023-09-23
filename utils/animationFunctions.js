@@ -190,7 +190,7 @@ function checkIfRotation(subStr) {
 }
 
 function convertRotationToDegString(str) {
-  let regex = /deg|turn|to/;
+  let regex = /deg|turn|to /;
   let match = str.match(regex)[0];
   let value = str.split(match)[0];
 
@@ -200,7 +200,16 @@ function convertRotationToDegString(str) {
   }
 
   if (match === "to") {
-    const lookupObj = { top: "0", bottom: "180", left: "270", right: "90" };
+    const lookupObj = {
+      top: "0",
+      "right top": "10",
+      right: "90",
+      "right bottom": "170",
+      bottom: "180",
+      "left bottom": "190",
+      left: "270",
+      "left top": "350",
+    };
     let direction = str.split(match)[1].trim();
     value = lookupObj[direction];
   }
