@@ -241,9 +241,9 @@ function formatStepsFromJs(steps, element) {
 
 async function animate(element, steps, optionalSettings) {
   console.log("formatting settings");
-  console.log(steps);
+
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
-  console.log(steps);
+
   // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
   // e.g, linear-gradient(to left, red 50px, green 100px, red 150px)
   //   => linear-gradient(270deg, rgb(255, 0, 0) 50px, rgb(0, 255, 0) 100px, rgb(255, 0, 0) 150px)
