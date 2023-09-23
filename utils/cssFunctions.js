@@ -4,19 +4,23 @@ import animate from "./animationFunctions.js";
 
 // check if @keyframes linearGradient exists
 function checkForGradientAnimationCSS(doc) {
-  let myRules = doc.styleSheets[0].cssRules;
+  const styleSheets = doc.styleSheets;
   let arrOfKeyframes = [];
-  for (let i = 0; i < myRules.length; i++) {
-    let keyframes;
-    let keyframeRuleName;
-    if (
-      myRules[i].type === 7 &&
-      myRules[i].name.includes("gradient-animation")
-    ) {
-      keyframes = myRules[i];
-      keyframeRuleName = myRules[i].name;
-      arrOfKeyframes.push({ keyframeRuleName, keyframes });
-      // break;
+
+  for (let i = 0; i < styleSheets.length; i++) {
+    let myRules = styleSheets[i].cssRules;
+    for (let j = 0; j < myRules.length; j++) {
+      let keyframes;
+      let keyframeRuleName;
+      if (
+        myRules[j].type === 7 &&
+        myRules[j].name.includes("gradient-animation")
+      ) {
+        keyframes = myRules[j];
+        keyframeRuleName = myRules[j].name;
+        arrOfKeyframes.push({ keyframeRuleName, keyframes });
+        // break;
+      }
     }
   }
 
