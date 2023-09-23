@@ -8,7 +8,8 @@ function checkForGradientAnimationCSS(doc) {
   let arrOfKeyframes = [];
 
   for (let i = 0; i < styleSheets.length; i++) {
-    let myRules = styleSheets[i].cssRules;
+    let myRules = styleSheets[i]?.cssRules;
+    if (!myRules) continue;
     for (let j = 0; j < myRules.length; j++) {
       let keyframes;
       let keyframeRuleName;
