@@ -269,21 +269,18 @@ async function animate(element, steps, optionalSettings) {
   // console.log("||| STARTING ANIMATION |||");
 
   const iterations = optionalSettings?.iterations;
+  const startDelay = optionalSettings?.startDelay;
   const delay =
     optionalSettings?.delay === "infinite" ? Infinity : optionalSettings?.delay;
 
-  if (delay) {
-    // console.log(`delaying animation for ${delay}ms...`);
-    await delayAnimation(delay);
-    // console.log(`delay over, resuming animation...`);
-  }
+  if (startDelay) await delayAnimation(startDelay);
 
   let currentIteration = 1;
   let startTime = performance.now();
   const totalSteps = steps.length;
   let currentStep = 0;
 
-  function update(currentTime) {
+  async function update(currentTime) {
     // console.log("...animating...");
     const elapsedTime = currentTime - startTime;
     const currentKeyframe = steps[currentStep];
@@ -315,14 +312,14 @@ async function animate(element, steps, optionalSettings) {
         currentIteration++;
 
         if (iterations !== undefined && currentIteration > iterations) {
-          // console.log("||| FINISHED ANIMATION |||");
           element.dispatchEvent(new Event("animationFinished"));
           return; // All iterations completed
         } else if (iterations === undefined) {
-          // console.log("||| FINISHED ANIMATION |||");
           element.dispatchEvent(new Event("animationFinished"));
           return; // Run only once if iterations is undefined
         }
+
+        if (delay) await delayAnimation(delay);
       }
 
       startTime = performance.now();

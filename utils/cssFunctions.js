@@ -117,6 +117,8 @@ function initialiseCssOnLoad(document) {
     const gradient = document.querySelector(`.${keyframeRuleName}`);
     if (!gradient) continue;
 
+    const computedStyle = window.getComputedStyle(gradient);
+
     let {
       animation,
       animationName,
@@ -125,7 +127,11 @@ function initialiseCssOnLoad(document) {
       animationIterationCount,
       backgroundImage,
       animationDelay,
-    } = window.getComputedStyle(gradient);
+    } = computedStyle;
+
+    let animationStartDelay = computedStyle.getPropertyValue(
+      "--animation-start-delay"
+    );
 
     if (animation.split(", ")[1]) {
       animationName = animationName.split(", ")[0];
@@ -158,11 +164,17 @@ function initialiseCssOnLoad(document) {
 
     animationDelay = parseFloat(animationDelay) * 1000;
 
+    const startDelayIsMs = animationStartDelay.includes("ms");
+    animationStartDelay = parseFloat(animationStartDelay);
+
+    if (!startDelayIsMs) animationStartDelay *= 1000;
+
     resArr.push([
       gradient,
       keyframes2,
       animationIterationCount,
       animationDelay,
+      animationStartDelay,
     ]);
   }
 
@@ -171,9 +183,11 @@ function initialiseCssOnLoad(document) {
     const keyframes2 = resArr[i][1];
     const animationIterationCount = resArr[i][2];
     const delay = resArr[i][3];
+    const startDelay = resArr[i][4];
     animate(gradient, keyframes2, {
       iterations: animationIterationCount,
       delay: delay,
+      startDelay: startDelay,
     });
   }
 }
