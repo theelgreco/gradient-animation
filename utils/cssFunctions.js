@@ -8,8 +8,14 @@ function checkForGradientAnimationCSS(doc) {
   let arrOfKeyframes = [];
 
   for (let i = 0; i < styleSheets.length; i++) {
-    let myRules = styleSheets[i]?.cssRules;
-    if (!myRules) continue;
+    // check for external stylesheet
+    const { href } = styleSheets[i];
+    const { origin } = window.location;
+    // if the stylesheet is external then ignore and continue to next iteration
+    if (!href.includes(origin)) continue;
+
+    const myRules = styleSheets[i].cssRules;
+
     for (let j = 0; j < myRules.length; j++) {
       let keyframes;
       let keyframeRuleName;
