@@ -103,7 +103,6 @@ function calculateDurationPerFrame(
 
 function initialiseCssOnLoad(document) {
   const arrOfKeyframes = checkForGradientAnimationCSS(document);
-
   let resArr = [];
 
   for (let i = 0; i < arrOfKeyframes.length; i++) {
@@ -128,8 +127,10 @@ function initialiseCssOnLoad(document) {
       animationIterationCount = animationIterationCount.split(", ")[0] || null;
       animationDelay = animationDelay.split(", ")[0] || null;
     }
-
-    if (animationName !== "gradient") continue;
+    console.log(animationName);
+    if (animationName !== "gradient") {
+      if (!animationName.includes("_gradient_")) continue;
+    }
     if (!keyframes && !parseFloat(animationDuration)) continue;
 
     let keyframesFromCss = formatKeyframeStrings(keyframes, backgroundImage);
