@@ -127,7 +127,7 @@ function initialiseCssOnLoad(document) {
       animationIterationCount = animationIterationCount.split(", ")[0] || null;
       animationDelay = animationDelay.split(", ")[0] || null;
     }
-    console.log(animationName);
+
     if (animationName !== "gradient") {
       if (!animationName.includes("_gradient_")) continue;
     }

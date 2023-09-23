@@ -249,9 +249,9 @@ function formatStepsFromJs(steps, element) {
 }
 
 async function animate(element, steps, optionalSettings) {
-  console.log("formatting settings");
+  // console.log("formatting settings");
 
-  console.log(element, steps, optionalSettings);
+  // console.log(element, steps, optionalSettings);
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
 
   // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
@@ -262,16 +262,16 @@ async function animate(element, steps, optionalSettings) {
     step.to = convertGradientString(step.to);
   });
 
-  console.log("||| STARTING ANIMATION |||");
+  // console.log("||| STARTING ANIMATION |||");
 
   const iterations = optionalSettings?.iterations;
   const delay =
     optionalSettings?.delay === "infinite" ? Infinity : optionalSettings?.delay;
 
   if (delay) {
-    console.log(`delaying animation for ${delay}ms...`);
+    // console.log(`delaying animation for ${delay}ms...`);
     await delayAnimation(delay);
-    console.log(`delay over, resuming animation...`);
+    // console.log(`delay over, resuming animation...`);
   }
 
   let currentIteration = 1;
@@ -280,7 +280,7 @@ async function animate(element, steps, optionalSettings) {
   let currentStep = 0;
 
   function update(currentTime) {
-    console.log("...animating...");
+    // console.log("...animating...");
     const elapsedTime = currentTime - startTime;
     const currentKeyframe = steps[currentStep];
 
@@ -311,11 +311,11 @@ async function animate(element, steps, optionalSettings) {
         currentIteration++;
 
         if (iterations !== undefined && currentIteration > iterations) {
-          console.log("||| FINISHED ANIMATION |||");
+          // console.log("||| FINISHED ANIMATION |||");
           element.dispatchEvent(new Event("animationFinished"));
           return; // All iterations completed
         } else if (iterations === undefined) {
-          console.log("||| FINISHED ANIMATION |||");
+          // console.log("||| FINISHED ANIMATION |||");
           element.dispatchEvent(new Event("animationFinished"));
           return; // Run only once if iterations is undefined
         }

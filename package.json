@@ -1,6 +1,6 @@
 {
   "name": "gradient-animation",
-  "version": "1.0.1",
+  "version": "1.0.11",
   "description": "A gradient animation tool, that gives you the ability to create beautoful gradient animations directly in CSS or in JS",
   "main": "src/index.js",
   "scripts": {
