@@ -12,7 +12,7 @@ function checkForGradientAnimationCSS(doc) {
     const { href } = styleSheets[i];
     const { origin } = window.location;
     // if the stylesheet is external then ignore and continue to next iteration
-    if (!href.includes(origin)) continue;
+    if (href && !href.includes(origin)) continue;
 
     const myRules = styleSheets[i].cssRules;
 
