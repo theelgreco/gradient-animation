@@ -132,6 +132,7 @@ function initialiseCssOnLoad(document) {
       backgroundImage,
       animationDelay,
       animationFillMode,
+      animationDirection,
     } = computedStyle;
 
     let animationStartDelay = computedStyle.getPropertyValue(
@@ -144,6 +145,8 @@ function initialiseCssOnLoad(document) {
       animationTimingFunction = animationTimingFunction.split(", ")[0];
       animationIterationCount = animationIterationCount.split(", ")[0] || null;
       animationDelay = animationDelay.split(", ")[0] || null;
+      animationFillMode = animationFillMode.split(", ")[0] || null;
+      animationDirection = animationDirection.split(", ")[0] || null;
     }
 
     if (animationName !== "gradient") {
@@ -159,14 +162,6 @@ function initialiseCssOnLoad(document) {
       animationTimingFunction
     );
 
-    if (animationIterationCount === "infinite") {
-      animationIterationCount = Infinity;
-    } else if (!animationIterationCount) {
-      animationIterationCount = 1;
-    } else {
-      animationIterationCount = parseInt(animationIterationCount);
-    }
-
     animationDelay = parseFloat(animationDelay) * 1000;
 
     const startDelayIsMs = animationStartDelay.includes("ms");
@@ -181,6 +176,7 @@ function initialiseCssOnLoad(document) {
       animationDelay,
       animationStartDelay,
       animationFillMode,
+      animationDirection,
     ]);
   }
 
@@ -191,12 +187,14 @@ function initialiseCssOnLoad(document) {
     const delay = resArr[i][3];
     const startDelay = resArr[i][4];
     const fill = resArr[i][5];
+    const direction = resArr[i][6];
 
     animate(gradient, keyframes2, {
       iterations: animationIterationCount,
       delay: delay,
       startDelay: startDelay,
       fill: fill,
+      direction: direction,
     });
   }
 }

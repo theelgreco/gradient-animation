@@ -256,14 +256,18 @@ function formatStepsFromJs(steps, element) {
   return res;
 }
 
-function animationEnded(iterations, currentIteration) {
-  if (iterations !== undefined && currentIteration > iterations) {
-    return true; // All iterations completed
-  } else if (iterations === undefined) {
-    return true; // Run only once if iterations is undefined
+function reverseSteps(stepsArr) {
+  const resArr = [];
+  const stepsArrToReversed = stepsArr.toReversed();
+  for (let i = 0; i < stepsArrToReversed.length; i++) {
+    const step = stepsArrToReversed[i];
+    const { to, from } = step;
+    const objCopy = { ...step };
+    objCopy.to = from;
+    objCopy.from = to;
+    resArr.push(objCopy);
   }
-
-  return false;
+  return resArr;
 }
 
 async function animate(element, steps, optionalSettings) {
@@ -279,24 +283,40 @@ async function animate(element, steps, optionalSettings) {
     step.to = convertGradientString(step.to);
   });
 
-  // console.log("||| STARTING ANIMATION |||");
   const originalBackground = window.getComputedStyle(element).backgroundImage;
-  const iterations = optionalSettings?.iterations;
+
+  let iterations = optionalSettings?.iterations;
+  if (!iterations) iterations = 1;
+  else if (iterations === "infinite") iterations = Infinity;
+  else iterations = parseInt(iterations);
+
   const startDelay = optionalSettings?.startDelay;
   const fill = optionalSettings?.fill;
-  const delay =
-    optionalSettings?.delay === "infinite" ? Infinity : optionalSettings?.delay;
-
-  if (startDelay) await delayAnimation(startDelay);
+  const delay = optionalSettings?.delay;
+  const direction = optionalSettings?.direction || "normal";
 
   let currentIteration = 1;
-  let startTime = performance.now();
   const totalSteps = steps.length;
   let currentStep = 0;
+  // if direction is not normal make a copy of steps array reversed
+  const reversedSteps = direction !== "normal" ? reverseSteps(steps) : null;
+
+  const stepsLookupObj = {
+    normal: { 0: steps, 1: steps },
+    reverse: { 0: reversedSteps, 1: reversedSteps },
+    alternate: { 0: reversedSteps, 1: steps },
+    "alternate-reverse": { 0: steps, 1: reversedSteps },
+  };
+
+  let currentDirection = currentIteration % 2;
+  let currentDirectionSteps = stepsLookupObj[direction][currentDirection];
+
+  if (startDelay) await delayAnimation(startDelay);
+  let startTime = performance.now();
 
   async function update(currentTime) {
     const elapsedTime = currentTime - startTime;
-    const currentKeyframe = steps[currentStep];
+    const currentKeyframe = currentDirectionSteps[currentStep];
 
     // Takes the from property and turns into a nested array, e.g:
     // from: "linear-gradient(90deg, red, orange 50%, red)",
@@ -312,8 +332,8 @@ async function animate(element, steps, optionalSettings) {
       currentKeyframe.to
     );
 
-    const { duration } = steps[currentStep];
-    let method = timingFunctions[steps[currentStep].method];
+    const { duration } = currentDirectionSteps[currentStep];
+    let method = timingFunctions[currentDirectionSteps[currentStep].method];
     if (!method) method = timingFunctions["linear"];
 
     if (elapsedTime >= duration) {
@@ -324,7 +344,10 @@ async function animate(element, steps, optionalSettings) {
         currentStep = 0; // Reset to the first keyframe for the next iteration
         currentIteration++;
 
-        if (animationEnded(iterations, currentIteration)) {
+        currentDirection = currentIteration % 2;
+        currentDirectionSteps = stepsLookupObj[direction][currentDirection];
+
+        if (currentIteration > iterations) {
           element.dispatchEvent(new Event("animationFinished"));
           return; // All iterations completed
         }
