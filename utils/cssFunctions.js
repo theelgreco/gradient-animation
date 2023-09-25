@@ -15,7 +15,6 @@ function checkForGradientAnimationCSS(doc) {
     if (href && !href.includes(origin)) continue;
 
     const myRules = styleSheets[i].cssRules;
-
     for (let j = 0; j < myRules.length; j++) {
       let keyframes;
       let keyframeRuleName;
@@ -35,13 +34,16 @@ function checkForGradientAnimationCSS(doc) {
   // return { animationName, keyframes };
 }
 
-// create array with keyframe strings => e.g, ["linear-gradient(90deg, red, black, red)"]
+// create array with keyframe strings from css @keyframes rule e.g,
+// "100% { background-image: linear-gradient(90deg, red, black, red) );
+//  => ["linear-gradient(90deg, red, black, red)", "100%"]
 function formatKeyframeStrings(keyframes, backgroundImage) {
   let frames = [];
   let index = 0;
   for (let key in keyframes) {
+    // only look in the objects that have a number as a key, these contain the info we want
     if (parseInt(key) > -1) {
-      let regex = /linear-gradient\(.*\)/;
+      let regex = /(linear|radial)-gradient\(.*\)/;
       let frame = keyframes[key];
       let cssText = frame.cssText;
       let keyText = frame.keyText;
@@ -49,9 +51,12 @@ function formatKeyframeStrings(keyframes, backgroundImage) {
         frames.push([backgroundImage, "0%"]);
       }
       frames.push([cssText.match(regex)[0], keyText]);
+    } else {
+      break;
     }
     index++;
   }
+
   return frames;
 }
 
@@ -111,6 +116,8 @@ function calculateDurationPerFrame(
   const percentToDecimal = (currentKeyframePercent - prevKeyframePercent) / 100;
   return Math.floor(duration * percentToDecimal);
 }
+
+function checkForTransitions(document) {}
 
 function initialiseCssOnLoad(document) {
   const arrOfKeyframes = checkForGradientAnimationCSS(document);
