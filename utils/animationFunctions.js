@@ -14,37 +14,35 @@ import {
 //   => { index: 1, from: 20, to: 50, unit: "%" }
 function findDiffIndex(arr1, arr2) {
   const arrLength = arr1.length;
-
   const arrOfDiffs = [];
 
-  for (let i = 0; i < arrLength; i++) {
-    const nestedArr1 = arr1[i];
-    const nestedArr2 = arr2[i];
-
-    if (!nestedArr1[1]) continue;
-    if (nestedArr1.length < 3) {
+  for (let i = 1; i < arrLength; i++) {
+    const subArray1 = arr1[i];
+    const subArray2 = arr2[i];
+    if (!subArray1[1]) continue;
+    if (subArray1.length < 3) {
       const diff = {};
-      const val1Check = nestedArr1[0] === nestedArr2[0];
-      const val2check = nestedArr1[1] === nestedArr2[1];
+      const val1Check = subArray1[0] === subArray2[0];
+      const val2check = subArray1[1] === subArray2[1];
       if (val1Check !== val2check) {
         const unitRegex = /\D+/;
-        const subIndex = parseFloat(nestedArr1[1]) > -1 ? 1 : 0;
+        const subIndex = parseFloat(subArray1[1]) > -1 ? 1 : 0;
         diff.index = i;
         diff.subIndex = subIndex;
-        diff.startValue = parseFloat(nestedArr1[subIndex]);
-        diff.endValue = parseFloat(nestedArr2[subIndex]);
-        diff.unit = nestedArr1[1].match(unitRegex)[0];
+        diff.startValue = parseFloat(subArray1[subIndex]);
+        diff.endValue = parseFloat(subArray2[subIndex]);
+        diff.unit = subArray1[1].match(unitRegex)[0];
         diff.property = subIndex === 0 ? "rotation" : "position";
         arrOfDiffs.push(diff);
       }
     } else {
       const smallerArr =
-        nestedArr1.length < nestedArr2.length ? nestedArr1 : nestedArr2;
+        subArray1.length < subArray2.length ? subArray1 : subArray2;
       const smallerArrLength = smallerArr.length;
 
       for (let j = 0; j < smallerArrLength; j++) {
-        const val1 = nestedArr1[j];
-        const val2 = nestedArr2[j];
+        const val1 = subArray1[j];
+        const val2 = subArray2[j];
         const valCheck = val1 === val2;
 
         if (!valCheck) {
@@ -91,12 +89,16 @@ async function animate(element, steps, optionalSettings) {
   // if the first step has a value property it's come from js so needs formatting
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
 
+  let gradientType;
   // takes the from/to linear-gradient strings for each step and converts all colours to rgb/rgba and all rotations to deg,
   // e.g, linear-gradient(to left, red 50px, green 100px, red 150px)
   //   => linear-gradient(270deg, rgb(255, 0, 0) 50px, rgb(0, 255, 0) 100px, rgb(255, 0, 0) 150px)
-  steps.forEach((step) => {
-    step.from = convertGradientString(step.from);
-    step.to = convertGradientString(step.to);
+  steps.forEach((step, index) => {
+    const from = convertGradientString(step.from);
+    const to = convertGradientString(step.to);
+    if (index === 0) gradientType = from.type;
+    step.from = from.string;
+    step.to = to.string;
   });
 
   const originalBackground = window.getComputedStyle(element).backgroundImage;
@@ -138,14 +140,16 @@ async function animate(element, steps, optionalSettings) {
     // from: "linear-gradient(90deg, red, orange 50%, red)",
     //    => [["90", "deg"], ["red"], ["orange", "50%"], ["red"]]
     const fromStrNestedArr = linearGradientStringToNestedArray(
-      currentKeyframe.from
+      currentKeyframe.from,
+      gradientType
     );
 
     // Takes the to property and turns into a nested array, e.g:
     // from: "linear-gradient(90deg, red, orange 50%, red)",
     //    => [["90", "deg"], ["red"], ["orange", "10%"], ["red"]]
     const toStrNestedArr = linearGradientStringToNestedArray(
-      currentKeyframe.to
+      currentKeyframe.to,
+      gradientType
     );
 
     const { duration } = currentDirectionSteps[currentStep];

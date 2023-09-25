@@ -8,23 +8,33 @@ function convertGradientString(step) {
   tempElement.style.backgroundImage = step;
   tempElement.style.display = "none";
   document.body.appendChild(tempElement);
-  const formattedBgString =
-    window.getComputedStyle(tempElement).backgroundImage;
+  // prettier-ignore
+  const formattedBgString = window.getComputedStyle(tempElement).backgroundImage;
   document.body.removeChild(tempElement);
 
-  // match string inside of parentheses (-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
-  const regex = /linear-gradient\((.*)\)/;
+  // match string inside of parentheses linear-gradient(-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
+  const regex = /(linear|radial)-gradient\((.*)\)/;
+  const matches = formattedBgString.match(regex);
+  const typeOfGradient = matches[1];
+  const valuesString = matches[2];
+  // seperates values into seperate parts, e.g ["90deg", "red 50px", "orange"]
   const splitRegex = /(?<=[a-z\)%]), /;
-  const stringArray = formattedBgString.match(regex)[1].split(splitRegex);
-  const isRotation = checkIfRotation(stringArray[0]);
+  const valuesArray = valuesString.split(splitRegex);
 
-  if (!isRotation) {
-    stringArray.unshift("180deg");
-  } else {
-    stringArray[0] = convertRotationToDegString(stringArray[0]);
+  if (typeOfGradient === "linear") {
+    const rotationString = convertRotationToDegString(valuesArray[0]);
+    if (!rotationString) valuesArray.unshift("180deg");
+    else valuesArray[0] = rotationString;
+  } else if (typeOfGradient === "radial") {
+    const radialGradientShapeString = convertRadialGradientShape(
+      valuesArray[0]
+    );
+    // shape will either always be shape string or 2 values (width,height)
+    if (!radialGradientShapeString) valuesArray.unshift("ellipse at 50% 50%");
+    else valuesArray[0] = radialGradientShapeString;
   }
 
-  const stringArrayMap = stringArray.map((str) => {
+  const valuesArrayMap = valuesArray.map((str) => {
     let rgbRegex = /rgb/;
     let rgbaRegex = /rgba/;
 
@@ -36,22 +46,19 @@ function convertGradientString(step) {
     return str;
   });
 
-  let joined = stringArrayMap.join(", ");
-  let resString = `linear-gradient(${joined})`;
+  let joined = valuesArrayMap.join(", ");
+  let resString = `${typeOfGradient}-gradient(${joined})`;
 
-  return resString;
-}
-
-function checkIfRotation(subStr) {
-  const isRotation =
-    subStr.includes("deg") || subStr.includes("turn") || subStr.includes("to");
-  return isRotation;
+  return { string: resString, type: typeOfGradient };
 }
 
 function convertRotationToDegString(str) {
   let regex = /deg|turn|to /;
-  let match = str.match(regex)[0];
-  let value = str.split(match)[0];
+  let match = str.match(regex);
+
+  if (!match) return false;
+
+  let value = str.split(match[0])[0];
 
   if (match === "turn") {
     value = value.includes(".") ? "0." + value.split(".")[1] : value;
@@ -77,13 +84,82 @@ function convertRotationToDegString(str) {
   return res;
 }
 
+function convertRadialGradientShape(str) {
+  const isEllipseWithPosition = str[0] + str[1] === "at";
+  const isEllipseWithoutPosition = str[0] + str[1] + str[2] === "rgb";
+
+  //   covers if:
+  //   - shape is only shapeString, e.g 'circle'
+  //   - shape is not provided, as if the string is not a number or shapeString then there is no shape
+  if (str === "circle") return "circle at 50% 50%";
+  else if (isEllipseWithoutPosition) return false;
+
+  const values = isEllipseWithPosition ? str.split("at ") : str.split(" at ");
+  if (isEllipseWithPosition) values[0] = "ellipse";
+
+  let resString = "";
+
+  // if length is 1, only shape is specified, could be shapeString or value, e.g 'circle' or '50%'
+  if (values.length === 1) {
+    const shape = values[0];
+    const shapeSplit = shape.split(" ");
+    const value1 = shapeSplit[0];
+    const value2 = shapeSplit[1];
+    if (!parseFloat(value1)) resString = `${value1} at 50% 50%`;
+    else if (!value2) resString = `${value1} ${value1} at 50% 50%`;
+    else resString = `${value1} ${value2} at 50% 50%`;
+  } else {
+    const shapeString = values[0];
+    let positionString = values[1];
+    const shapes = shapeString.split(" ");
+    const isShapeString = shapes[0] === "circle" || shapes[0] === "ellipse";
+    const lookupObj = {
+      top: "50% 0%",
+      "top center": "50% 0%",
+      "center top": "50% 0%",
+      "top right": "100% 0%",
+      "right top": "100% 0%",
+      right: "100% 50%",
+      "right center": "100% 50%",
+      "center right": "100% 50%",
+      "bottom right": "100% 100%",
+      "right bottom": "100% 100%",
+      bottom: "50% 100%",
+      "center bottom": "50% 100%",
+      "bottom center": "50% 100%",
+      "bottom left": "0% 100%",
+      "left bottom": "0% 100%",
+      left: "0% 50%",
+      "left center": "0% 50%",
+      "center left": "0% 50%",
+      "top left": "0% 0%",
+      "left top": "0% 0%",
+    };
+
+    if (lookupObj[positionString]) positionString = lookupObj[positionString];
+
+    const positions = positionString.split(" ").map((position) => {
+      if (position === "center") position = "50%";
+      else if (position === "left" || position === "top") position = "0%";
+      else if (position === "bottom" || position === "right") position = "100%";
+      return position;
+    });
+
+    // prettier-ignore
+    if (!shapes[1] && isShapeString) resString = `${shapes[0]} at ${positions[0]} ${positions[1]}`;
+    else if(!shapes[1]) resString = `${shapes[0]} ${shapes[0]} at ${positions[0]} ${positions[1]}`;
+    else resString = `${shapes[0]} ${shapes[1]} at ${positions[0]} ${positions[1]}`;
+  }
+
+  return resString;
+}
+
 // takes step string and converts it to nested array, as well as rgba e.g,
 // linear-gradient(90deg, rgb(0, 255, 0, 0.5), rgb(0, 255, 0), rgb(0, 255, 0))
 // => [["90", "deg"], ["0", "255", "0", "0.5"], ["0", "255", "0", "1"], ["0", "255", "1"]]
-function linearGradientStringToNestedArray(str) {
-  const gradientTypeRegex = /(linear|radial|conic)-gradient/;
-  const gradientType = str.match(gradientTypeRegex)[0];
-  const regex = /linear-gradient\((.*)\)/;
+function linearGradientStringToNestedArray(str, gradientType) {
+  const str1 = `${gradientType}-gradient\\((.*)\\)`;
+  const regex = new RegExp(str1);
   const splitRegex = /(?<=[a-z\)%]), /;
   // match string inside of parentheses (-55deg, transparent 25%) => ["-55deg", "transparent 25%"]
 
@@ -95,10 +171,11 @@ function linearGradientStringToNestedArray(str) {
   for (let i = 0; i < stringArray.length; i++) {
     const subStr = stringArray[i];
     const splitStr = subStr.split(/(?<=[a-z\)]) /);
-    // console.log(subStr);
 
-    if (i === 0) {
+    if (i === 0 && gradientType === "linear") {
       res.push(splitRotationStringToArr(subStr));
+    } else if (i === 0 && gradientType === "radial") {
+      res.push(splitRadialShapeStringToArr(subStr));
     } else {
       let regex = /rgba\(/;
       let str1 = splitStr[0];
@@ -110,33 +187,43 @@ function linearGradientStringToNestedArray(str) {
         ? [...rgbaColourValues, positionValue]
         : [...rgbaColourValues];
 
-      // colourSplit.unshift(gradientType);
       res.push(colourSplit);
     }
   }
+
+  res.unshift([`${gradientType}-gradient`]);
 
   return res;
 }
 
 function splitRotationStringToArr(str) {
-  let regex = /deg/;
-  let match = str.match(regex)[0];
-  let value = str.split(match)[0];
-
-  let resArr = [value, "deg"];
+  const value = str.split("deg")[0];
+  const resArr = [value, "deg"];
   return resArr;
+}
+
+function splitRadialShapeStringToArr(str) {
+  return str.split(" ");
 }
 
 // put pieces of the string back together:
 // [["90", "deg"],["0", "0", "0", "0", "0%"], ["255", "0", "0", "0", "0.5%"], ["0", "0", "0", "0", "100%"]];
 // => "linear-gradient(90deg, rgb(0, 0, 0, 0) 0%, rgb(255, 0, 0, 0) 0.5%, rgb(0, 0, 0, 0) 100%)"
 function formatStringFromArr(arr) {
-  let resString = "linear-gradient(";
+  const gradientType = arr[0][0];
+  let resString = `${gradientType}(`;
   let lastIndex = arr.length - 1;
-  arr.forEach((subArr, index) => {
-    // if subArr[0] is a num then join without spaces, e.g "90", "deg" => "90deg"
-    if (index === 0) {
+
+  for (let i = 0; i < arr.length; i++) {
+    const index = i;
+    const subArr = arr[index];
+    // arr[0] is the type of gradient, e.g ["linear"], ["radial"] so skip
+    if (index === 0) continue;
+
+    if (index === 1 && gradientType === "linear-gradient") {
       resString += subArr.join("");
+    } else if (index === 1 && gradientType === "radial-gradient") {
+      resString += subArr.join(" ");
     } else {
       let rgbaString = `rgba(${subArr[0]}, ${subArr[1]}, ${subArr[2]}, ${subArr[3]})`;
       if (subArr[4]) rgbaString += ` ${subArr[4]}`;
@@ -144,7 +231,8 @@ function formatStringFromArr(arr) {
     }
 
     if (index !== lastIndex) resString += ",";
-  });
+  }
+
   resString += ")";
 
   return resString;
