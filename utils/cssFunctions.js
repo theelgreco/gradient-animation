@@ -41,9 +41,10 @@ function formatKeyframeStrings(keyframes, backgroundImage) {
   let frames = [];
   let index = 0;
   for (let key in keyframes) {
+    // prettier-ignore
     // only look in the objects that have a number as a key, these contain the info we want
     if (parseInt(key) > -1) {
-      let regex = /(linear|radial)-gradient\(.*\)/;
+      let regex = /(linear|repeating-linear|radial|repeating-radial)-gradient\(.*\)/;
       let frame = keyframes[key];
       let cssText = frame.cssText;
       let keyText = frame.keyText;
