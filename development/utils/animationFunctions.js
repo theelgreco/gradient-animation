@@ -1,6 +1,6 @@
 /* MAIN ANIMATION METHODS */
 
-import timingFunctions from "../utils/timingFunctions.js";
+import timingFunctions from "./timingFunctions.js";
 import formatStepsFromJs from "./jsFunctions.js";
 import {
   convertGradientString,
