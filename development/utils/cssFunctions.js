@@ -99,7 +99,7 @@ function checkForTransitions(obj) {
   };
 
   for (const key in obj) {
-    const el = document.querySelector(key);
+    const elements = document.querySelectorAll(key);
     const { transitionProps, events } = obj[key];
 
     let {
@@ -111,81 +111,83 @@ function checkForTransitions(obj) {
 
     transitionDuration = secondsStringToMs(transitionDuration);
 
-    const startingBg = window.getComputedStyle(el).backgroundImage;
+    elements.forEach((el) => {
+      const startingBg = window.getComputedStyle(el).backgroundImage;
 
-    for (let i = 0; i < events.length; i++) {
-      const { event, backgroundImage } = events[i];
-      const firstEvent = eventsLookup[event][0];
-      const secondEvent = eventsLookup[event][1];
-      let startTime = 0;
+      for (let i = 0; i < events.length; i++) {
+        const { event, backgroundImage } = events[i];
+        const firstEvent = eventsLookup[event][0];
+        const secondEvent = eventsLookup[event][1];
+        let startTime = 0;
 
-      el.addEventListener(firstEvent, (e) => {
-        e.stopPropagation();
-        e.preventDefault();
+        el.addEventListener(firstEvent, (e) => {
+          e.stopPropagation();
+          e.preventDefault();
 
-        let val = startingBg;
-        const elapsedTime = performance.now() - startTime;
-        let duration = transitionDuration;
+          let val = startingBg;
+          const elapsedTime = performance.now() - startTime;
+          let duration = transitionDuration;
 
-        if (elapsedTime < transitionDuration && startTime) {
-          cancelAnimation(el);
-          val = el.style.backgroundImage;
-          duration = duration - elapsedTime;
-        }
+          if (elapsedTime < transitionDuration && startTime) {
+            cancelAnimation(el);
+            val = el.style.backgroundImage;
+            duration = duration - elapsedTime;
+          }
 
-        startTime = performance.now();
+          startTime = performance.now();
 
-        const steps = [
-          {
-            value: val,
-          },
-          {
-            value: backgroundImage,
-            duration: duration,
-            method: transitionTimingFunction,
-          },
-        ];
-        animateGradient(el, steps, {
-          iterations: 1,
-          delay: transitionDelay,
-          fill: "forwards",
-          direction: transitionBehavior,
+          const steps = [
+            {
+              value: val,
+            },
+            {
+              value: backgroundImage,
+              duration: duration,
+              method: transitionTimingFunction,
+            },
+          ];
+          animateGradient(el, steps, {
+            iterations: 1,
+            delay: transitionDelay,
+            fill: "forwards",
+            direction: transitionBehavior,
+          });
         });
-      });
 
-      el.addEventListener(secondEvent, (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        const elapsedTime = performance.now() - startTime;
+        el.addEventListener(secondEvent, (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const elapsedTime = performance.now() - startTime;
 
-        let duration = transitionDuration;
+          let duration = transitionDuration;
 
-        if (elapsedTime < transitionDuration) {
-          cancelAnimation(el);
-          duration = elapsedTime;
-        }
+          if (elapsedTime < transitionDuration) {
+            cancelAnimation(el);
+            duration = elapsedTime;
+          }
 
-        startTime = performance.now();
+          startTime = performance.now();
 
-        const steps = [
-          {
-            value: el.style.backgroundImage,
-          },
-          {
-            value: startingBg,
-            duration: duration,
-            method: transitionTimingFunction,
-          },
-        ];
+          const steps = [
+            {
+              value: el.style.backgroundImage,
+            },
+            {
+              value: startingBg,
+              duration: duration,
+              method: transitionTimingFunction,
+            },
+          ];
 
-        animateGradient(el, steps, {
-          iterations: 1,
-          delay: transitionDelay,
-          fill: "forwards",
-          direction: transitionBehavior,
+          animateGradient(el, steps, {
+            iterations: 1,
+            delay: transitionDelay,
+            fill: "forwards",
+            direction: transitionBehavior,
+          });
         });
-      });
-    }
+      }
+    });
   }
 }
 
