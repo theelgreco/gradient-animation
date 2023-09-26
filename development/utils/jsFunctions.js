@@ -1,4 +1,4 @@
-export default function formatStepsFromJs(steps, element) {
+export function formatStepsFromJs(steps, element) {
   let res = [];
   let elementBackgroundImage = window.getComputedStyle(element).backgroundImage;
 

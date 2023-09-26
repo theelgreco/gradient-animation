@@ -1,7 +1,7 @@
 /* MAIN ANIMATION METHODS */
 
-import timingFunctions from "./timingFunctions.js";
-import formatStepsFromJs from "./jsFunctions.js";
+import {timingFunctions} from "./timingFunctions.js";
+import {formatStepsFromJs} from "./jsFunctions.js";
 import {
   convertGradientString,
   linearGradientStringToNestedArray,
@@ -84,7 +84,7 @@ function reverseSteps(stepsArr) {
   return resArr;
 }
 
-async function animate(element, steps, optionalSettings) {
+async function animateGradient(element, steps, optionalSettings) {
   // console.log("formatting settings");
   // if the first step has a value property it's come from js so needs formatting
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
@@ -226,4 +226,4 @@ async function animate(element, steps, optionalSettings) {
   });
 }
 
-export default animate;
+export {animateGradient};

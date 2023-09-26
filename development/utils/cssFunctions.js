@@ -1,6 +1,6 @@
 /* CSS FILE METHODS */
 
-import animate from "./animationFunctions.js";
+import {animateGradient} from "./animationFunctions.js";
 
 // check if @keyframes linearGradient exists
 function checkForGradientAnimationCSS(doc) {
@@ -197,7 +197,7 @@ function initialiseCssOnLoad(document) {
     const fill = resArr[i][5];
     const direction = resArr[i][6];
 
-    animate(gradient, keyframes2, {
+    animateGradient(gradient, keyframes2, {
       iterations: animationIterationCount,
       delay: delay,
       startDelay: startDelay,
@@ -207,4 +207,4 @@ function initialiseCssOnLoad(document) {
   }
 }
 
-export default initialiseCssOnLoad;
+export {initialiseCssOnLoad};

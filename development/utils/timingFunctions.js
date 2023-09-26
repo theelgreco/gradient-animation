@@ -42,4 +42,4 @@ const timingFunctions = {
   easeInOutCubic: easeInOutCubic,
 };
 
-export default timingFunctions;
+export {timingFunctions};
