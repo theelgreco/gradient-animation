@@ -1,7 +1,7 @@
 /* MAIN ANIMATION METHODS */
 
-import {timingFunctions} from "./timingFunctions.js";
-import {formatStepsFromJs} from "./jsFunctions.js";
+import { timingFunctions } from "./timingFunctions.js";
+import { formatStepsFromJs } from "./jsFunctions.js";
 import {
   convertGradientString,
   linearGradientStringToNestedArray,
@@ -84,9 +84,21 @@ function reverseSteps(stepsArr) {
   return resArr;
 }
 
+let animCount = 0;
+let animIds = {};
+
+function cancelAnimation(element) {
+  cancelAnimationFrame(animIds[element.dataset.animnum]);
+  delete element.dataset.animnum;
+  delete animIds[element.dataset.animnum];
+}
+
 async function animateGradient(element, steps, optionalSettings) {
   // console.log("formatting settings");
   // if the first step has a value property it's come from js so needs formatting
+  if (!element.dataset.animnum) element.dataset.animnum = animCount;
+  animCount++;
+
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
 
   let gradientType;
@@ -211,19 +223,21 @@ async function animateGradient(element, steps, optionalSettings) {
       });
     }
 
-    requestAnimationFrame(update);
+    animIds[element.dataset.animnum] = requestAnimationFrame(update);
   }
 
   return new Promise((resolve) => {
     function onAnimationFinished() {
+      delete element.dataset.animnum;
+      delete animIds[element.dataset.animnum];
       if (!fill) element.style.backgroundImage = originalBackground;
       element.removeEventListener("animationFinished", onAnimationFinished);
       resolve(); // Resolve the Promise when the animation is finished
     }
 
     element.addEventListener("animationFinished", onAnimationFinished);
-    requestAnimationFrame(update);
+    animIds[element.dataset.animnum] = requestAnimationFrame(update);
   });
 }
 
-export {animateGradient};
+export { animateGradient, cancelAnimation };
