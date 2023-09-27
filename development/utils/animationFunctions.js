@@ -100,8 +100,6 @@ async function animateGradient(element, steps, optionalSettings) {
   if (!element.dataset.animnum) element.dataset.animnum = animCount;
   animCount++;
 
-  console.log(optionalSettings);
-
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
 
   let gradientType;
@@ -169,8 +167,7 @@ async function animateGradient(element, steps, optionalSettings) {
 
     const { duration } = currentDirectionSteps[currentStep];
     let method = currentDirectionSteps[currentStep].method;
-    console.log(method);
-    console.log("hello");
+
     if (!method) {
       method = timingFunctions.linear;
     } else if (method.includes("cubic-bezier")) {
@@ -257,4 +254,4 @@ async function animateGradient(element, steps, optionalSettings) {
   });
 }
 
-export { animateGradient, cancelAnimation };
+export { animateGradient, cancelAnimation, delayAnimation };

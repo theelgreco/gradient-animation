@@ -1,6 +1,10 @@
 /* CSS FILE METHODS */
 
-import { animateGradient, cancelAnimation } from "./animationFunctions.js";
+import {
+  animateGradient,
+  cancelAnimation,
+  delayAnimation,
+} from "./animationFunctions.js";
 
 function initialiseCssOnLoad(document) {
   const arrOfKeyframes = checkForGradientAnimationCSS(document);
@@ -119,6 +123,7 @@ function checkForTransitions(obj) {
     } = transitionProps;
 
     transitionDuration = secondsStringToMs(transitionDuration);
+    transitionDelay = secondsStringToMs(transitionDelay);
 
     elements.forEach((el) => {
       const startingBg = window.getComputedStyle(el).backgroundImage;
@@ -129,13 +134,20 @@ function checkForTransitions(obj) {
         const secondEvent = eventsLookup[event][1];
         let startTime = 0;
         let playCount = 0;
+        let animationCancelled = false;
 
-        el.addEventListener(firstEvent, (e) => {
+        el.addEventListener(firstEvent, async (e) => {
           e.stopPropagation();
           e.preventDefault();
 
           if (playCount === 0) el.style.backgroundImage = startingBg;
           playCount++;
+
+          if (transitionDelay) await delayAnimation(transitionDelay);
+          if (animationCancelled) {
+            animationCancelled = false;
+            return;
+          }
 
           let val = startingBg;
           const elapsedTime = performance.now() - startTime;
@@ -161,15 +173,16 @@ function checkForTransitions(obj) {
           ];
           animateGradient(el, steps, {
             iterations: 1,
-            startDelay: transitionDelay,
             fill: "forwards",
             direction: transitionBehavior,
           });
         });
 
-        el.addEventListener(secondEvent, (e) => {
+        el.addEventListener(secondEvent, async (e) => {
           e.stopPropagation();
           e.preventDefault();
+          animationCancelled = true;
+
           const elapsedTime = performance.now() - startTime;
 
           let duration = transitionDuration;
@@ -178,6 +191,9 @@ function checkForTransitions(obj) {
             cancelAnimation(el);
             duration = elapsedTime;
           }
+
+          if (transitionDelay) await delayAnimation(transitionDelay);
+          animationCancelled = false;
 
           startTime = performance.now();
 
@@ -194,7 +210,6 @@ function checkForTransitions(obj) {
 
           animateGradient(el, steps, {
             iterations: 1,
-            startDelay: transitionDelay,
             fill: "forwards",
             direction: transitionBehavior,
           });
