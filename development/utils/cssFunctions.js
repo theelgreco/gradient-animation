@@ -30,6 +30,12 @@ function initialiseCssOnLoad(document) {
       "--animation-start-delay"
     );
 
+    let customTimingFunction = computedStyle.getPropertyValue(
+      "--animation-custom-timing"
+    );
+
+    if (customTimingFunction) animationTimingFunction = customTimingFunction;
+
     let timingSplit = /(?<=[A-Za-z)]), /;
     let animSplit = /[A-Za-z], /;
 
@@ -122,10 +128,14 @@ function checkForTransitions(obj) {
         const firstEvent = eventsLookup[event][0];
         const secondEvent = eventsLookup[event][1];
         let startTime = 0;
+        let playCount = 0;
 
         el.addEventListener(firstEvent, (e) => {
           e.stopPropagation();
           e.preventDefault();
+
+          if (playCount === 0) el.style.backgroundImage = startingBg;
+          playCount++;
 
           let val = startingBg;
           const elapsedTime = performance.now() - startTime;
@@ -151,7 +161,7 @@ function checkForTransitions(obj) {
           ];
           animateGradient(el, steps, {
             iterations: 1,
-            delay: transitionDelay,
+            startDelay: transitionDelay,
             fill: "forwards",
             direction: transitionBehavior,
           });
@@ -184,7 +194,7 @@ function checkForTransitions(obj) {
 
           animateGradient(el, steps, {
             iterations: 1,
-            delay: transitionDelay,
+            startDelay: transitionDelay,
             fill: "forwards",
             direction: transitionBehavior,
           });
@@ -228,13 +238,20 @@ function checkForGradientAnimationCSS(doc) {
         style.transitionProperty.includes("gradient")
       ) {
         const selector = rule.selectorText;
-        const {
+        let {
           transitionBehavior,
           transitionDelay,
           transitionDuration,
           transitionProperty,
           transitionTimingFunction,
         } = rule.style;
+
+        let customTimingFunction = rule.style.getPropertyValue(
+          "--transition-custom-timing"
+        );
+
+        // prettier-ignore
+        if (customTimingFunction) transitionTimingFunction = customTimingFunction;
 
         obj[selector] = {
           transitionProps: {
@@ -251,7 +268,7 @@ function checkForGradientAnimationCSS(doc) {
         const className = split[0];
         const event = split[1];
         const { backgroundImage } = style;
-        obj[className].events.push({
+        obj[className]?.events.push({
           event: event,
           backgroundImage: backgroundImage,
         });
@@ -334,6 +351,7 @@ function formatKeyframes(stepsFromCss, duration, method) {
 
 // convert time string to ms, e.g => "0.2s" becomes 200
 function secondsStringToMs(str) {
+  if (typeof str !== "string") return str;
   if (str.includes("ms")) return parseFloat(str);
   return parseFloat(str) * 1000;
 }
@@ -348,4 +366,4 @@ function calculateDurationPerFrame(
   return Math.floor(duration * percentToDecimal);
 }
 
-export { initialiseCssOnLoad };
+export { initialiseCssOnLoad, secondsStringToMs };

@@ -1,6 +1,7 @@
 /* MAIN ANIMATION METHODS */
 
 import { timingFunctions } from "./timingFunctions.js";
+import { secondsStringToMs } from "./cssFunctions.js";
 import { formatStepsFromJs } from "./jsFunctions.js";
 import {
   convertGradientString,
@@ -99,6 +100,8 @@ async function animateGradient(element, steps, optionalSettings) {
   if (!element.dataset.animnum) element.dataset.animnum = animCount;
   animCount++;
 
+  console.log(optionalSettings);
+
   if (steps[0].value) steps = formatStepsFromJs(steps, element);
 
   let gradientType;
@@ -120,9 +123,9 @@ async function animateGradient(element, steps, optionalSettings) {
   else if (iterations === "infinite") iterations = Infinity;
   else iterations = parseInt(iterations);
 
-  const startDelay = optionalSettings?.startDelay;
+  const startDelay = secondsStringToMs(optionalSettings?.startDelay);
   const fill = optionalSettings?.fill;
-  const delay = optionalSettings?.delay;
+  const delay = secondsStringToMs(optionalSettings?.delay);
   const direction = optionalSettings?.direction || "normal";
 
   let currentIteration = 1;
@@ -166,7 +169,8 @@ async function animateGradient(element, steps, optionalSettings) {
 
     const { duration } = currentDirectionSteps[currentStep];
     let method = currentDirectionSteps[currentStep].method;
-
+    console.log(method);
+    console.log("hello");
     if (!method) {
       method = timingFunctions.linear;
     } else if (method.includes("cubic-bezier")) {
