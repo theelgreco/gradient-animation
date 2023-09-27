@@ -165,8 +165,21 @@ async function animateGradient(element, steps, optionalSettings) {
     );
 
     const { duration } = currentDirectionSteps[currentStep];
-    let method = timingFunctions[currentDirectionSteps[currentStep].method];
-    if (!method) method = timingFunctions["linear"];
+    let method = currentDirectionSteps[currentStep].method;
+
+    if (!method) {
+      method = timingFunctions.linear;
+    } else if (method.includes("cubic-bezier")) {
+      const cubicPointsRegex = /(?<=\(|, )\d\.\d+|\d/g;
+      const cubicPoints = [...method.matchAll(cubicPointsRegex)];
+      const X1 = cubicPoints[0][0];
+      const Y1 = cubicPoints[1][0];
+      const X2 = cubicPoints[2][0];
+      const Y2 = cubicPoints[3][0];
+      method = timingFunctions["cubic-bezier"](X1, Y1, X2, Y2);
+    } else {
+      method = timingFunctions[method];
+    }
 
     if (elapsedTime >= duration) {
       element.style.backgroundImage = formatStringFromArr(toStrNestedArr);

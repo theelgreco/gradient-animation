@@ -1,6 +1,7 @@
 // import bezierEasing from "../node_modules/bezier-easing/src/index.ts";
 
 /* TIMING FUNCTIONS */
+import bezier from "./bezierEasing.js";
 
 function easeInSine(x) {
   return 1 - Math.cos((x * Math.PI) / 2);
@@ -34,12 +35,14 @@ function linear(x) {
 
 const timingFunctions = {
   linear: linear,
+  ease: linear,
   "ease-in": easeInSine,
   "ease-out": easeOutSine,
   "ease-in-out": easeInOutSine,
   easeInQuad: easeInQuad,
   easeOutBack: easeOutBack,
   easeInOutCubic: easeInOutCubic,
+  "cubic-bezier": bezier,
 };
 
-export {timingFunctions};
+export { timingFunctions };

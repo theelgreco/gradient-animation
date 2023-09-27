@@ -30,10 +30,13 @@ function initialiseCssOnLoad(document) {
       "--animation-start-delay"
     );
 
-    if (animation.split(", ")[1]) {
+    let timingSplit = /(?<=[A-Za-z)]), /;
+    let animSplit = /[A-Za-z], /;
+
+    if (animation.split(animSplit)[1]) {
       animationName = animationName.split(", ")[0];
       animationDuration = animationDuration.split(", ")[0];
-      animationTimingFunction = animationTimingFunction.split(", ")[0];
+      animationTimingFunction = animationTimingFunction.split(timingSplit)[0];
       animationIterationCount = animationIterationCount.split(", ")[0] || null;
       animationDelay = animationDelay.split(", ")[0] || null;
       animationFillMode = animationFillMode.split(", ")[0] || null;
